@@ -553,7 +553,7 @@
 
     <script>
         // REMPLACER PAR VOTRE URL FIREBASE RÉELLE
-        const FIREBASE_URL = "https://VOTRE-PROJET.firebaseio.com/licences.json";
+        const FIREBASE_URL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences.json";
 
         // Afficher une notification
         function showNotification(message, isError = false) {
@@ -655,15 +655,21 @@
             };
 
             try {
-                await fetch(`https://VOTRE-PROJET.firebaseio.com/licences/${nouveauCode}.json`, {
+                const response = await fetch(`https://compo-d6eeb-default-rtdb.firebaseio.com/licences/${nouveauCode}.json`, {
                     method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(payload)
                 });
-                
-                showNotification(`Licence ${nouveauCode} générée avec succès`);
-                chargerDonnees();
+            
+                if (!response.ok) throw new Error('Réponse serveur incorrecte');
+            
+                showNotification(`Licence ${nouveauCode} générée (1000 FCFA enregistrés)`);
+                chargerDonnees(); // Rafraîchit le tableau et le revenu total
             } catch (e) {
-                showNotification("Erreur lors de la génération", true);
+                console.error(e);
+                showNotification("Échec : vérifiez votre connexion ou les règles Firebase", true);
             }
         }
 
