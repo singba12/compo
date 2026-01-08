@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Gestion des Licences</title>
+    <title>Admin Compo - Connexion</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --primary: #00853f;
@@ -34,15 +38,136 @@
             color: var(--dark);
             line-height: 1.6;
             min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             padding: 20px;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
         }
 
-        /* Header */
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--light);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 133, 63, 0.1);
+            background: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #006b32;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        .login-footer {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        .login-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Dashboard Styles (initialement caché) */
+        .dashboard-container {
+            display: none;
+            padding: 20px;
+        }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -77,6 +202,12 @@
             padding: 10px 15px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-info:hover .logout-dropdown {
+            display: block;
         }
 
         .user-avatar {
@@ -89,6 +220,37 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
+        }
+
+        .logout-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 10px 0;
+            min-width: 200px;
+            display: none;
+            z-index: 100;
+        }
+
+        .logout-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--dark);
+            transition: var(--transition);
+        }
+
+        .logout-item:hover {
+            background: var(--light);
+        }
+
+        .logout-item i {
+            color: var(--danger);
         }
 
         /* Stats Grid */
@@ -178,40 +340,6 @@
             gap: 15px;
             flex-wrap: wrap;
             align-items: center;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.95rem;
-            white-space: nowrap;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #006b32;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: var(--light);
-            color: var(--dark);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: #f1f5f9;
         }
 
         /* Nouveau: Conteneur des filtres */
@@ -481,6 +609,10 @@
             .filter-group {
                 min-width: 100%;
             }
+            
+            .login-box {
+                padding: 30px 20px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -555,148 +687,219 @@
             margin-bottom: 15px;
             opacity: 0.5;
         }
+
+        /* Error message */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Loading animation */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <h1><i class="fas fa-key"></i> Gestion des Licences Compo</h1>
+    <!-- Login Screen -->
+    <div class="login-container" id="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1><i class="fas fa-key"></i> Compo Admin</h1>
                 <p>Gestion des licences et suivi des ventes</p>
             </div>
-            <div class="user-info">
-                <div class="user-avatar">AD</div>
-                <div>
-                    <div style="font-weight: 600;">Administrateur</div>
-                    <div style="font-size: 0.8rem; color: var(--gray);">Dernière connexion: Aujourd'hui</div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-info">
-                    <h3><i class="fas fa-check-circle"></i> Licences Actives</h3>
-                    <p id="count-actif">0</p>
-                </div>
-                <div class="stat-icon stat-1">
-                    <i class="fas fa-user-check"></i>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <h3><i class="fas fa-ban"></i> Licences Bannies</h3>
-                    <p id="count-off">0</p>
-                </div>
-                <div class="stat-icon stat-2">
-                    <i class="fas fa-user-slash"></i>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <h3><i class="fas fa-shopping-cart"></i> Total Ventes</h3>
-                    <p id="total-sales">0</p>
-                </div>
-                <div class="stat-icon stat-3">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-info">
-                    <h3><i class="fas fa-money-bill-wave"></i> Revenu Total</h3>
-                    <p id="total-revenue">0 FCFA</p>
-                </div>
-                <div class="stat-icon stat-4">
-                    <i class="fas fa-coins"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Container -->
-        <div class="admin-container">
-            <div class="container-header">
-                <h2><i class="fas fa-list"></i> Liste des Licences</h2>
-                <div class="controls">
-                    <div class="search-container">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="search-input" class="search-input" placeholder="Rechercher une licence...">
-                    </div>
-                    <button class="btn btn-secondary" onclick="chargerDonnees()">
-                        <i class="fas fa-sync-alt"></i> Actualiser
-                    </button>
-                    <button class="btn btn-primary" onclick="genererNouveauCode()">
-                        <i class="fas fa-plus"></i> Nouvelle Licence (1000 FCFA)
-                    </button>
-                </div>
-            </div>
             
-            <!-- Nouveau: Filtres -->
-            <div class="filters-container">
-                <div class="filter-group">
-                    <label for="filter-status"><i class="fas fa-filter"></i> Statut</label>
-                    <select id="filter-status" class="filter-select">
-                        <option value="all">Tous les statuts</option>
-                        <option value="actif">Actif</option>
-                        <option value="banni">Banni</option>
-                    </select>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email Administrateur</label>
+                    <input type="email" id="email" class="form-control" placeholder="admin@compo.com" required>
                 </div>
                 
-                <div class="filter-group">
-                    <label for="filter-hwid"><i class="fas fa-laptop"></i> Appareil</label>
-                    <select id="filter-hwid" class="filter-select">
-                        <option value="all">Tous les appareils</option>
-                        <option value="assigned">Assigné</option>
-                        <option value="unassigned">Non assigné</option>
-                    </select>
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Mot de passe</label>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
                 </div>
                 
-                <div class="filter-group">
-                    <label><i class="fas fa-sort"></i> Ordre</label>
-                    <select id="sort-order" class="filter-select">
-                        <option value="date-desc">Date (Récent → Ancien)</option>
-                        <option value="date-asc">Date (Ancien → Récent)</option>
-                        <option value="code-asc">Code (A → Z)</option>
-                        <option value="code-desc">Code (Z → A)</option>
-                        <option value="status">Statut</option>
-                    </select>
+                <div id="login-error" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="error-text"></span>
                 </div>
                 
-                <button class="btn btn-secondary" onclick="resetFilters()" style="align-self: flex-end; padding: 10px 15px; font-size: 0.9rem;">
-                    <i class="fas fa-redo"></i> Réinitialiser
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Se connecter
                 </button>
-            </div>
+            </form>
             
-            <!-- Résultats de recherche -->
-            <div class="search-results" id="search-results">
-                <div><strong id="results-count">0</strong> licences trouvées</div>
-                <div>Filtrées sur <strong id="filtered-count">0</strong> licences</div>
-            </div>
-            
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="sortable" data-sort="code" onclick="sortTable('code')">Code Licence</th>
-                            <th class="sortable" data-sort="date" onclick="sortTable('date')">Date Création</th>
-                            <th class="sortable" data-sort="hwid" onclick="sortTable('hwid')">Appareil (HWID)</th>
-                            <th class="sortable" data-sort="status" onclick="sortTable('status')">Statut</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="table-body">
-                        <!-- Les données seront insérées ici -->
-                    </tbody>
-                </table>
+            <div class="login-footer">
+                <p><i class="fas fa-shield-alt"></i> Accès réservé aux administrateurs autorisés</p>
+                <p style="margin-top: 10px;">© <span id="current-year">2023</span> Compo Admin - Tous droits réservés</p>
             </div>
         </div>
+    </div>
 
-        <!-- Footer -->
-        <div class="footer">
-            <p><i class="far fa-copyright"></i> <span id="current-year">2023</span> Compo Admin. Mise à jour: <span id="last-update">--:--:--</span></p>
+    <!-- Dashboard (caché initialement) -->
+    <div class="dashboard-container" id="dashboard-container">
+        <div class="container">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1><i class="fas fa-key"></i> Gestion des Licences Compo</h1>
+                    <p>Gestion des licences et suivi des ventes</p>
+                </div>
+                <div class="user-info" id="user-info">
+                    <div class="user-avatar" id="user-avatar">AD</div>
+                    <div>
+                        <div style="font-weight: 600;" id="user-name">Administrateur</div>
+                        <div style="font-size: 0.8rem; color: var(--gray);" id="user-email"></div>
+                    </div>
+                    <div class="logout-dropdown">
+                        <a href="#" class="logout-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Se déconnecter
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-check-circle"></i> Licences Actives</h3>
+                        <p id="count-actif">0</p>
+                    </div>
+                    <div class="stat-icon stat-1">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-ban"></i> Licences Bannies</h3>
+                        <p id="count-off">0</p>
+                    </div>
+                    <div class="stat-icon stat-2">
+                        <i class="fas fa-user-slash"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-shopping-cart"></i> Total Ventes</h3>
+                        <p id="total-sales">0</p>
+                    </div>
+                    <div class="stat-icon stat-3">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-money-bill-wave"></i> Revenu Total</h3>
+                        <p id="total-revenue">0 FCFA</p>
+                    </div>
+                    <div class="stat-icon stat-4">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Container -->
+            <div class="admin-container">
+                <div class="container-header">
+                    <h2><i class="fas fa-list"></i> Liste des Licences</h2>
+                    <div class="controls">
+                        <div class="search-container">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-input" class="search-input" placeholder="Rechercher une licence...">
+                        </div>
+                        <button class="btn btn-secondary" onclick="chargerDonnees()">
+                            <i class="fas fa-sync-alt"></i> Actualiser
+                        </button>
+                        <button class="btn btn-primary" onclick="genererNouveauCode()">
+                            <i class="fas fa-plus"></i> Nouvelle Licence (1000 FCFA)
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Filtres -->
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="filter-status"><i class="fas fa-filter"></i> Statut</label>
+                        <select id="filter-status" class="filter-select">
+                            <option value="all">Tous les statuts</option>
+                            <option value="actif">Actif</option>
+                            <option value="banni">Banni</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-hwid"><i class="fas fa-laptop"></i> Appareil</label>
+                        <select id="filter-hwid" class="filter-select">
+                            <option value="all">Tous les appareils</option>
+                            <option value="assigned">Assigné</option>
+                            <option value="unassigned">Non assigné</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-sort"></i> Ordre</label>
+                        <select id="sort-order" class="filter-select">
+                            <option value="date-desc">Date (Récent → Ancien)</option>
+                            <option value="date-asc">Date (Ancien → Récent)</option>
+                            <option value="code-asc">Code (A → Z)</option>
+                            <option value="code-desc">Code (Z → A)</option>
+                            <option value="status">Statut</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="resetFilters()" style="align-self: flex-end; padding: 10px 15px; font-size: 0.9rem;">
+                        <i class="fas fa-redo"></i> Réinitialiser
+                    </button>
+                </div>
+                
+                <!-- Résultats de recherche -->
+                <div class="search-results" id="search-results">
+                    <div><strong id="results-count">0</strong> licences trouvées</div>
+                    <div>Filtrées sur <strong id="filtered-count">0</strong> licences</div>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="code" onclick="sortTable('code')">Code Licence</th>
+                                <th class="sortable" data-sort="date" onclick="sortTable('date')">Date Création</th>
+                                <th class="sortable" data-sort="hwid" onclick="sortTable('hwid')">Appareil (HWID)</th>
+                                <th class="sortable" data-sort="status" onclick="sortTable('status')">Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Les données seront insérées ici -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p><i class="far fa-copyright"></i> <span id="current-year2">2023</span> Compo Admin. Mise à jour: <span id="last-update">--:--:--</span></p>
+                <p style="font-size: 0.8rem; margin-top: 5px;">Connecté en tant que: <span id="user-email-footer"></span></p>
+            </div>
         </div>
-        <script>document.getElementById('current-year').textContent = new Date().getFullYear(); </script>
     </div>
 
     <!-- Notification -->
@@ -706,13 +909,33 @@
     </div>
 
     <script>
-        // REMPLACER PAR VOTRE URL FIREBASE RÉELLE
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8I69DJS24bUObdJc7KEmEBEVnmNl7mIk",
+            authDomain: "compo-d6eeb.firebaseapp.com",
+            databaseURL: "https://compo-d6eeb-default-rtdb.firebaseio.com",
+            projectId: "compo-d6eeb",
+            storageBucket: "compo-d6eeb.appspot.com",
+            messagingSenderId: "346096756644",
+            appId: "1:346096756644:web:3b553b0b861a0b0222c3df"
+        };
+
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // URL Firebase pour les licences
         const FIREBASE_URL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences.json";
 
         // Variables globales pour les données et le tri
         let allData = [];
         let filteredData = [];
         let currentSort = { column: 'date', direction: 'desc' };
+
+        // Mettre à jour l'année courante
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        document.getElementById('current-year2').textContent = new Date().getFullYear();
 
         // Fonction pour convertir les dates françaises en objet Date
         function parseFrenchDate(dateString) {
@@ -762,6 +985,138 @@
                 notification.classList.remove('show');
             }, 3000);
         }
+
+        // Afficher une erreur de connexion
+        function showLoginError(message) {
+            const errorDiv = document.getElementById('login-error');
+            const errorText = document.getElementById('error-text');
+            
+            errorText.textContent = message;
+            errorDiv.style.display = 'flex';
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Basculer entre login et dashboard
+        function showDashboard() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('dashboard-container').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('dashboard-container').style.display = 'none';
+        }
+
+        // Gestion de la connexion
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            
+            // Sauvegarder le texte original du bouton
+            const originalText = loginBtn.innerHTML;
+            
+            // Afficher le loader
+            loginBtn.innerHTML = '<div class="loader"></div> Connexion...';
+            loginBtn.disabled = true;
+            
+            try {
+                // Se connecter avec Firebase Authentication
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                // Afficher le dashboard
+                showDashboard();
+                
+                // Mettre à jour l'interface utilisateur
+                const user = userCredential.user;
+                updateUserInfo(user);
+                
+                // Charger les données
+                chargerDonnees();
+                
+                showNotification(`Bienvenue ${user.email}`);
+                
+            } catch (error) {
+                console.error("Erreur de connexion:", error);
+                
+                // Gérer les erreurs spécifiques
+                let errorMessage = "Erreur de connexion";
+                switch(error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = "Email invalide";
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = "Compte désactivé";
+                        break;
+                    case 'auth/user-not-found':
+                        errorMessage = "Utilisateur non trouvé";
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = "Mot de passe incorrect";
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = "Trop de tentatives. Réessayez plus tard";
+                        break;
+                }
+                
+                showLoginError(errorMessage);
+            } finally {
+                // Restaurer le bouton
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        });
+
+        // Mettre à jour les informations utilisateur
+        function updateUserInfo(user) {
+            const userName = document.getElementById('user-name');
+            const userEmail = document.getElementById('user-email');
+            const userEmailFooter = document.getElementById('user-email-footer');
+            const userAvatar = document.getElementById('user-avatar');
+            
+            // Extraire les initiales
+            const initials = user.email.substring(0, 2).toUpperCase();
+            
+            // Mettre à jour l'interface
+            userName.textContent = user.email.split('@')[0];
+            userEmail.textContent = user.email;
+            userEmailFooter.textContent = user.email;
+            userAvatar.textContent = initials;
+        }
+
+        // Déconnexion
+        function logout() {
+            if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+                auth.signOut().then(() => {
+                    showLogin();
+                    showNotification("Déconnexion réussie");
+                    
+                    // Réinitialiser le formulaire
+                    document.getElementById('login-form').reset();
+                }).catch((error) => {
+                    console.error("Erreur de déconnexion:", error);
+                    showNotification("Erreur lors de la déconnexion", true);
+                });
+            }
+        }
+
+        // Vérifier l'état d'authentification au chargement
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Utilisateur connecté
+                showDashboard();
+                updateUserInfo(user);
+                chargerDonnees();
+            } else {
+                // Utilisateur non connecté
+                showLogin();
+            }
+        });
 
         // Charger les données
         async function chargerDonnees() {
@@ -1089,8 +1444,8 @@
         // Rafraîchir automatiquement toutes les 30 secondes
         setInterval(chargerDonnees, 30000);
         
-        // Charger les données au démarrage
-        window.onload = chargerDonnees;
+        // Pré-remplir avec un email de test (facultatif)
+        // document.getElementById('email').value = 'admin@compo.com';
     </script>
 </body>
 </html>
