@@ -676,20 +676,21 @@
         // Changer le statut
         async function toggleStatut(id, actuel) {
             const nouveauStatut = actuel === 'actif' ? 'banni' : 'actif';
-            const action = nouveauStatut === 'banni' ? 'bannir' : 'réactiver';
             
-            if(!confirm(`Voulez-vous vraiment ${action} la licence ${id} ?`)) return;
-
+            // On construit l'URL à partir de la constante de base
+            // FIREBASE_URL vaut "https://.../licences.json"
+            // On remplace "licences.json" par "licences/ID/status.json"
+            const urlModifiee = FIREBASE_URL.replace('licences.json', `licences/${id}/status.json`);
+        
             try {
-                await fetch(`https://VOTRE-PROJET.firebaseio.com/licences/${id}/status.json`, {
+                await fetch(urlModifiee, {
                     method: 'PUT',
                     body: JSON.stringify(nouveauStatut)
                 });
-                
-                showNotification(`Licence ${id} ${nouveauStatut === 'banni' ? 'bannie' : 'réactivée'}`);
+                showNotification(`Statut mis à jour : ${nouveauStatut}`);
                 chargerDonnees();
             } catch (e) {
-                showNotification("Erreur lors de la modification", true);
+                showNotification("Erreur de connexion", true);
             }
         }
 
