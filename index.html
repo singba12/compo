@@ -714,6 +714,41 @@
         let filteredData = [];
         let currentSort = { column: 'date', direction: 'desc' };
 
+        // Fonction pour convertir les dates françaises en objet Date
+        function parseFrenchDate(dateString) {
+            try {
+                // Format attendu: "8 janvier 2025 à 14:30"
+                // Séparer la date et l'heure
+                const parts = dateString.split(' à ');
+                const datePart = parts[0]; // "8 janvier 2025"
+                const timePart = parts[1] || "00:00"; // "14:30"
+                
+                // Extraire les composants de la date
+                const dateParts = datePart.split(' ');
+                const day = parseInt(dateParts[0]);
+                const monthName = dateParts[1].toLowerCase();
+                const year = parseInt(dateParts[2]);
+                
+                // Mapping des mois français
+                const monthMap = {
+                    'janvier': 0, 'février': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
+                    'juillet': 6, 'août': 7, 'septembre': 8, 'octobre': 9, 'novembre': 10, 'décembre': 11
+                };
+                
+                // Extraire l'heure
+                const timeParts = timePart.split(':');
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                
+                // Créer l'objet Date
+                return new Date(year, monthMap[monthName], day, hours, minutes);
+            } catch (error) {
+                console.error("Erreur de parsing de date:", dateString, error);
+                // Retourner une date très ancienne en cas d'erreur
+                return new Date(0);
+            }
+        }
+
         // Afficher une notification
         function showNotification(message, isError = false) {
             const notification = document.getElementById('notification');
@@ -743,6 +778,7 @@
                             id: id,
                             code: id,
                             date_creation: data[id].date_creation,
+                            date_creation_parsed: parseFrenchDate(data[id].date_creation),
                             hwid: data[id].hwid || '',
                             status: data[id].status || 'actif'
                         });
@@ -827,8 +863,9 @@
                             : bVal.localeCompare(aVal);
                     
                     case 'date':
-                        aVal = new Date(a.date_creation.split(' ').slice(0, 4).join(' '));
-                        bVal = new Date(b.date_creation.split(' ').slice(0, 4).join(' '));
+                        // Utiliser la date déjà parsée
+                        aVal = a.date_creation_parsed;
+                        bVal = b.date_creation_parsed;
                         return currentSort.direction === 'asc'
                             ? aVal - bVal
                             : bVal - aVal;
@@ -977,16 +1014,21 @@
             const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
             const nouveauCode = prefix + randomId;
             
+            // Créer une date complète avec heure et minutes
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('fr-FR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric'
+            }) + ' à ' + now.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
             const payload = {
                 status: "actif",
                 hwid: "",
-                date_creation: new Date().toLocaleDateString('fr-FR', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                })
+                date_creation: formattedDate
             };
 
             try {
