@@ -3,158 +3,575 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Gestion des Licences</title>
+    <title>Dashboard - Gestion des Licences</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #00853f;
+            --primary-light: #e6f4ea;
             --danger: #e31b23;
-            --bg: #f4f7f6;
-            --white: #ffffff;
+            --danger-light: #fee8e9;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+            --transition: all 0.3s ease;
         }
 
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            background: var(--bg); 
-            margin: 0; 
-            padding: 10px; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .header { padding: 10px 0; text-align: center; }
-
-        /* Grille de stats responsive */
-        .stats-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            margin-bottom: 25px; 
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f6f9fc 0%, #edf2f7 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        .stat-card { 
-            background: var(--white); 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-            text-align: center;
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
-        .stat-card h3 { margin: 0; color: #666; font-size: 0.9rem; text-transform: uppercase; }
-        .stat-card p { font-size: 1.5rem; font-weight: bold; margin: 10px 0 0; color: #333; }
-
-        /* Conteneur principal */
-        .admin-container { 
-            background: var(--white); 
-            padding: 15px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-        }
-
-        .controls { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 20px; 
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
 
-        .btn-gen { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
-            cursor: pointer; 
+        .header-left p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
-            width: 100%; /* Mobile first */
         }
 
-        @media (min-width: 600px) { .btn-gen { width: auto; } }
-
-        /* Tableau responsive */
-        .table-wrapper { overflow-x: auto; }
-        
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            min-width: 600px; /* Force le scroll horizontal sur petit écran */
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #fafafa; color: #666; font-size: 0.85rem; }
-
-        .status-badge { 
-            padding: 4px 10px; 
-            border-radius: 20px; 
-            font-size: 0.75rem; 
-            font-weight: bold; 
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .status-actif { background: #dcfce7; color: #166534; }
-        .status-banni { background: #fee2e2; color: #991b1b; }
 
-        .btn-action { 
-            padding: 6px 12px; 
-            border-radius: 6px; 
-            border: 1px solid #ddd; 
-            background: white; 
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-info h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-info p {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-1 { background: #e6f4ea; color: var(--primary); }
+        .stat-2 { background: #fee8e9; color: var(--danger); }
+        .stat-3 { background: #fef3c7; color: var(--warning); }
+        .stat-4 { background: #d1fae5; color: var(--success); }
+
+        /* Main Content */
+        .admin-container {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .container-header {
+            padding: 25px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .container-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
             cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #006b32;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+            max-width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: var(--light);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        thead {
+            background: var(--light);
+        }
+
+        th {
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            transition: var(--transition);
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .code-cell {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+
+        .hwid-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--gray);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-actif {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-banni {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-action {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-action:hover {
+            background: var(--light);
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: #fecaca;
+        }
+
+        .btn-success {
+            color: var(--success);
+            border-color: #a7f3d0;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: 30px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .container-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .controls {
+                width: 100%;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            th, td {
+                padding: 12px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header-left h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-info p {
+                font-size: 1.7rem;
+            }
+        }
+
+        /* Animation pour le rafraîchissement */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        tbody tr {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: var(--danger);
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1><i class="fas fa-key"></i> Dashboard Licences 🇸🇳</h1>
+                <p>Gestion des licences et suivi des ventes</p>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">AD</div>
+                <div>
+                    <div style="font-weight: 600;">Administrateur</div>
+                    <div style="font-size: 0.8rem; color: var(--gray);">Dernière connexion: Aujourd'hui</div>
+                </div>
+            </div>
+        </header>
 
-    <div class="header">
-        <h2>Dashboard Licences 🇸🇳</h2>
-    </div>
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3><i class="fas fa-check-circle"></i> Licences Actives</h3>
+                    <p id="count-actif">0</p>
+                </div>
+                <div class="stat-icon stat-1">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3><i class="fas fa-ban"></i> Licences Bannies</h3>
+                    <p id="count-off">0</p>
+                </div>
+                <div class="stat-icon stat-2">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3><i class="fas fa-shopping-cart"></i> Total Ventes</h3>
+                    <p id="total-sales">0</p>
+                </div>
+                <div class="stat-icon stat-3">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info">
+                    <h3><i class="fas fa-money-bill-wave"></i> Revenu Total</h3>
+                    <p id="total-revenue">0 FCFA</p>
+                </div>
+                <div class="stat-icon stat-4">
+                    <i class="fas fa-coins"></i>
+                </div>
+            </div>
+        </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Actifs</h3>
-            <p id="count-actif">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>Bannis</h3>
-            <p id="count-off">0</p>
-        </div>
-        <div class="stat-card">
-            <h3>Ventes</h3>
-            <p id="total-sales">0</p>
-        </div>
-        <div class="stat-card" style="border-bottom: 4px solid var(--primary);">
-            <h3>Revenu Total</h3>
-            <p id="total-revenue" style="color: var(--primary);">0 FCFA</p>
-        </div>
-    </div>
-
-    <div class="admin-container">
-        <div class="controls">
-            <button class="btn-gen" onclick="genererNouveauCode()">+ Générer Code (1000 FCFA)</button>
-            <span id="last-update" style="font-size: 0.8rem; color: #999;"></span>
-        </div>
-        
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Date</th>
-                        <th>Appareil (HWID)</th>
-                        <th>Statut</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
+        <!-- Main Container -->
+        <div class="admin-container">
+            <div class="container-header">
+                <h2><i class="fas fa-list"></i> Liste des Licences</h2>
+                <div class="controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Rechercher une licence...">
+                    </div>
+                    <button class="btn btn-secondary" onclick="chargerDonnees()">
+                        <i class="fas fa-sync-alt"></i> Actualiser
+                    </button>
+                    <button class="btn btn-primary" onclick="genererNouveauCode()">
+                        <i class="fas fa-plus"></i> Nouvelle Licence (1000 FCFA)
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Code Licence</th>
+                            <th>Date Création</th>
+                            <th>Appareil (HWID)</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Les données seront insérées ici -->
                     </tbody>
-            </table>
+                </table>
+            </div>
         </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><i class="far fa-copyright"></i> 2023 Dashboard Admin. Mise à jour: <span id="last-update">--:--:--</span></p>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">Opération réussie</span>
     </div>
 
     <script>
         // REMPLACER PAR VOTRE URL FIREBASE RÉELLE
         const FIREBASE_URL = "https://VOTRE-PROJET.firebaseio.com/licences.json";
 
+        // Afficher une notification
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            notification.className = `notification ${isError ? 'error' : ''}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Charger les données
         async function chargerDonnees() {
             try {
+                document.body.classList.add('loading');
                 const response = await fetch(FIREBASE_URL);
                 const data = await response.json();
                 
@@ -170,12 +587,18 @@
 
                         html += `
                             <tr>
-                                <td><strong>${id}</strong></td>
+                                <td class="code-cell"><i class="fas fa-key"></i> ${id}</td>
                                 <td>${item.date_creation}</td>
-                                <td style="font-family: monospace; font-size: 0.8rem;">${item.hwid || 'Libre'}</td>
-                                <td><span class="status-badge ${isBanni ? 'status-banni' : 'status-actif'}">${item.status}</span></td>
+                                <td class="hwid-cell">${item.hwid || '<span style="color:#9ca3af;">Non assigné</span>'}</td>
                                 <td>
-                                    <button class="btn-action" onclick="toggleStatut('${id}', '${item.status}')">
+                                    <span class="status-badge ${isBanni ? 'status-banni' : 'status-actif'}">
+                                        <i class="fas ${isBanni ? 'fa-ban' : 'fa-check'}"></i>
+                                        ${item.status}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn-action ${isBanni ? 'btn-success' : 'btn-danger'}" onclick="toggleStatut('${id}', '${item.status}')">
+                                        <i class="fas ${isBanni ? 'fa-check' : 'fa-ban'}"></i>
                                         ${isBanni ? 'Réactiver' : 'Bannir'}
                                     </button>
                                 </td>
@@ -184,17 +607,35 @@
                     }
                 }
 
-                document.getElementById('table-body').innerHTML = html || "<tr><td colspan='5' style='text-align:center'>Aucun code généré</td></tr>";
+                document.getElementById('table-body').innerHTML = html || `
+                    <tr>
+                        <td colspan="5" style="text-align:center; padding: 40px; color: var(--gray);">
+                            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                            <p style="font-size: 1.1rem;">Aucune licence générée</p>
+                            <p style="font-size: 0.9rem;">Cliquez sur "Nouvelle Licence" pour commencer</p>
+                        </td>
+                    </tr>`;
+                
                 document.getElementById('count-actif').innerText = actif;
                 document.getElementById('count-off').innerText = banni;
                 document.getElementById('total-sales').innerText = ventes;
-                document.getElementById('total-revenue').innerText = (ventes * 1000).toLocaleString() + " FCFA";
-                document.getElementById('last-update').innerText = "MàJ : " + new Date().toLocaleTimeString();
+                document.getElementById('total-revenue').innerText = (ventes * 1000).toLocaleString('fr-FR') + " FCFA";
+                
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+                document.getElementById('last-update').innerText = timeStr;
+                
+                showNotification(`Données mises à jour: ${actif + banni} licences chargées`);
+                
             } catch (e) {
                 console.error("Erreur Firebase : ", e);
+                showNotification("Erreur de connexion à la base de données", true);
+            } finally {
+                document.body.classList.remove('loading');
             }
         }
 
+        // Générer un nouveau code
         async function genererNouveauCode() {
             const prefix = "COMPO-";
             const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -203,30 +644,63 @@
             const payload = {
                 status: "actif",
                 hwid: "",
-                date_creation: new Date().toLocaleDateString('fr-FR')
+                date_creation: new Date().toLocaleDateString('fr-FR', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                })
             };
 
-            await fetch(`https://VOTRE-PROJET.firebaseio.com/licences/${nouveauCode}.json`, {
-                method: 'PUT',
-                body: JSON.stringify(payload)
-            });
-
-            chargerDonnees();
+            try {
+                await fetch(`https://VOTRE-PROJET.firebaseio.com/licences/${nouveauCode}.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+                
+                showNotification(`Licence ${nouveauCode} générée avec succès`);
+                chargerDonnees();
+            } catch (e) {
+                showNotification("Erreur lors de la génération", true);
+            }
         }
 
+        // Changer le statut
         async function toggleStatut(id, actuel) {
             const nouveauStatut = actuel === 'actif' ? 'banni' : 'actif';
-            if(!confirm(`Passer le code ${id} en ${nouveauStatut} ?`)) return;
+            const action = nouveauStatut === 'banni' ? 'bannir' : 'réactiver';
+            
+            if(!confirm(`Voulez-vous vraiment ${action} la licence ${id} ?`)) return;
 
-            await fetch(`https://VOTRE-PROJET.firebaseio.com/licences/${id}/status.json`, {
-                method: 'PUT',
-                body: JSON.stringify(nouveauStatut)
-            });
-            chargerDonnees();
+            try {
+                await fetch(`https://VOTRE-PROJET.firebaseio.com/licences/${id}/status.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(nouveauStatut)
+                });
+                
+                showNotification(`Licence ${id} ${nouveauStatut === 'banni' ? 'bannie' : 'réactivée'}`);
+                chargerDonnees();
+            } catch (e) {
+                showNotification("Erreur lors de la modification", true);
+            }
         }
 
-        // Rafraîchir toutes les 30 secondes
+        // Recherche
+        document.getElementById('search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#table-body tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Rafraîchir automatiquement toutes les 30 secondes
         setInterval(chargerDonnees, 30000);
+        
+        // Charger les données au démarrage
         window.onload = chargerDonnees;
     </script>
 </body>
