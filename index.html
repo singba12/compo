@@ -177,6 +177,7 @@
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
         .btn {
@@ -190,6 +191,7 @@
             align-items: center;
             gap: 8px;
             font-size: 0.95rem;
+            white-space: nowrap;
         }
 
         .btn-primary {
@@ -212,27 +214,74 @@
             background: #f1f5f9;
         }
 
-        .search-box {
-            position: relative;
-            flex-grow: 1;
-            max-width: 300px;
+        /* Nouveau: Conteneur des filtres */
+        .filters-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 15px 25px;
+            border-bottom: 1px solid var(--border);
+            background: #f9fafb;
+            align-items: center;
         }
 
-        .search-box input {
-            width: 100%;
-            padding: 12px 20px 12px 45px;
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px;
+        }
+
+        .filter-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
             border: 1px solid var(--border);
             border-radius: 8px;
+            background: white;
             font-size: 0.95rem;
-            background: var(--light);
+            cursor: pointer;
+            transition: var(--transition);
         }
 
-        .search-box i {
+        .filter-select:hover {
+            border-color: var(--primary);
+        }
+
+        .search-container {
+            flex-grow: 1;
+            max-width: 300px;
+            position: relative;
+        }
+
+        .search-container i {
             position: absolute;
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--gray);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 133, 63, 0.1);
         }
 
         /* Table */
@@ -260,6 +309,31 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        th:hover {
+            background: #e5e7eb;
+        }
+
+        th.sortable::after {
+            content: '↕';
+            margin-left: 8px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        th.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+        }
+
+        th.sort-desc::after {
+            content: '↓';
+            opacity: 1;
         }
 
         td {
@@ -340,6 +414,22 @@
             border-color: #a7f3d0;
         }
 
+        /* Résultats de recherche */
+        .search-results {
+            padding: 15px 25px;
+            background: #f3f4f6;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            color: var(--gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-results strong {
+            color: var(--primary);
+        }
+
         /* Footer */
         .footer {
             text-align: center;
@@ -366,7 +456,7 @@
                 width: 100%;
             }
             
-            .search-box {
+            .search-container {
                 max-width: 100%;
             }
             
@@ -381,6 +471,15 @@
             
             th, td {
                 padding: 12px 15px;
+            }
+            
+            .filters-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                min-width: 100%;
             }
         }
 
@@ -442,6 +541,19 @@
 
         .notification.error {
             background: var(--danger);
+        }
+
+        /* No results */
+        .no-results {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray);
+        }
+
+        .no-results i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -507,9 +619,9 @@
             <div class="container-header">
                 <h2><i class="fas fa-list"></i> Liste des Licences</h2>
                 <div class="controls">
-                    <div class="search-box">
+                    <div class="search-container">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="search-input" placeholder="Rechercher une licence...">
+                        <input type="text" id="search-input" class="search-input" placeholder="Rechercher une licence...">
                     </div>
                     <button class="btn btn-secondary" onclick="chargerDonnees()">
                         <i class="fas fa-sync-alt"></i> Actualiser
@@ -520,14 +632,56 @@
                 </div>
             </div>
             
+            <!-- Nouveau: Filtres -->
+            <div class="filters-container">
+                <div class="filter-group">
+                    <label for="filter-status"><i class="fas fa-filter"></i> Statut</label>
+                    <select id="filter-status" class="filter-select">
+                        <option value="all">Tous les statuts</option>
+                        <option value="actif">Actif</option>
+                        <option value="banni">Banni</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="filter-hwid"><i class="fas fa-laptop"></i> Appareil</label>
+                    <select id="filter-hwid" class="filter-select">
+                        <option value="all">Tous les appareils</option>
+                        <option value="assigned">Assigné</option>
+                        <option value="unassigned">Non assigné</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label><i class="fas fa-sort"></i> Ordre</label>
+                    <select id="sort-order" class="filter-select">
+                        <option value="date-desc">Date (Récent → Ancien)</option>
+                        <option value="date-asc">Date (Ancien → Récent)</option>
+                        <option value="code-asc">Code (A → Z)</option>
+                        <option value="code-desc">Code (Z → A)</option>
+                        <option value="status">Statut</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="resetFilters()" style="align-self: flex-end; padding: 10px 15px; font-size: 0.9rem;">
+                    <i class="fas fa-redo"></i> Réinitialiser
+                </button>
+            </div>
+            
+            <!-- Résultats de recherche -->
+            <div class="search-results" id="search-results">
+                <div><strong id="results-count">0</strong> licences trouvées</div>
+                <div>Filtrées sur <strong id="filtered-count">0</strong> licences</div>
+            </div>
+            
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th>Code Licence</th>
-                            <th>Date Création</th>
-                            <th>Appareil (HWID)</th>
-                            <th>Statut</th>
+                            <th class="sortable" data-sort="code" onclick="sortTable('code')">Code Licence</th>
+                            <th class="sortable" data-sort="date" onclick="sortTable('date')">Date Création</th>
+                            <th class="sortable" data-sort="hwid" onclick="sortTable('hwid')">Appareil (HWID)</th>
+                            <th class="sortable" data-sort="status" onclick="sortTable('status')">Statut</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -555,6 +709,11 @@
         // REMPLACER PAR VOTRE URL FIREBASE RÉELLE
         const FIREBASE_URL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences.json";
 
+        // Variables globales pour les données et le tri
+        let allData = [];
+        let filteredData = [];
+        let currentSort = { column: 'date', direction: 'desc' };
+
         // Afficher une notification
         function showNotification(message, isError = false) {
             const notification = document.getElementById('notification');
@@ -576,57 +735,31 @@
                 const response = await fetch(FIREBASE_URL);
                 const data = await response.json();
                 
-                let html = "";
-                let actif = 0, banni = 0, ventes = 0;
-
+                // Transformer les données en tableau
+                allData = [];
                 if (data) {
                     for (let id in data) {
-                        const item = data[id];
-                        const isBanni = item.status === 'banni';
-                        if(!isBanni) actif++; else banni++;
-                        ventes++;
-
-                        html += `
-                            <tr>
-                                <td class="code-cell"><i class="fas fa-key"></i> ${id}</td>
-                                <td>${item.date_creation}</td>
-                                <td class="hwid-cell">${item.hwid || '<span style="color:#9ca3af;">Non assigné</span>'}</td>
-                                <td>
-                                    <span class="status-badge ${isBanni ? 'status-banni' : 'status-actif'}">
-                                        <i class="fas ${isBanni ? 'fa-ban' : 'fa-check'}"></i>
-                                        ${item.status}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="btn-action ${isBanni ? 'btn-success' : 'btn-danger'}" onclick="toggleStatut('${id}', '${item.status}')">
-                                        <i class="fas ${isBanni ? 'fa-check' : 'fa-ban'}"></i>
-                                        ${isBanni ? 'Réactiver' : 'Bannir'}
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
+                        allData.push({
+                            id: id,
+                            code: id,
+                            date_creation: data[id].date_creation,
+                            hwid: data[id].hwid || '',
+                            status: data[id].status || 'actif'
+                        });
                     }
                 }
-
-                document.getElementById('table-body').innerHTML = html || `
-                    <tr>
-                        <td colspan="5" style="text-align:center; padding: 40px; color: var(--gray);">
-                            <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
-                            <p style="font-size: 1.1rem;">Aucune licence générée</p>
-                            <p style="font-size: 0.9rem;">Cliquez sur "Nouvelle Licence" pour commencer</p>
-                        </td>
-                    </tr>`;
                 
-                document.getElementById('count-actif').innerText = actif;
-                document.getElementById('count-off').innerText = banni;
-                document.getElementById('total-sales').innerText = ventes;
-                document.getElementById('total-revenue').innerText = (ventes * 1000).toLocaleString('fr-FR') + " FCFA";
+                // Appliquer les filtres et tri
+                applyFiltersAndSort();
+                
+                // Mettre à jour les statistiques
+                updateStats(allData);
                 
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
                 document.getElementById('last-update').innerText = timeStr;
                 
-                showNotification(`Données mises à jour: ${actif + banni} licences chargées`);
+                showNotification(`${allData.length} licences chargées`);
                 
             } catch (e) {
                 console.error("Erreur Firebase : ", e);
@@ -634,6 +767,208 @@
             } finally {
                 document.body.classList.remove('loading');
             }
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats(data) {
+            let actif = 0, banni = 0, ventes = 0;
+            
+            data.forEach(item => {
+                if(item.status === 'banni') banni++;
+                else actif++;
+                ventes++;
+            });
+            
+            document.getElementById('count-actif').innerText = actif;
+            document.getElementById('count-off').innerText = banni;
+            document.getElementById('total-sales').innerText = ventes;
+            document.getElementById('total-revenue').innerText = (ventes * 1000).toLocaleString('fr-FR') + " FCFA";
+        }
+
+        // Appliquer les filtres et le tri
+        function applyFiltersAndSort() {
+            let result = [...allData];
+            
+            // Filtrer par statut
+            const statusFilter = document.getElementById('filter-status').value;
+            if (statusFilter !== 'all') {
+                result = result.filter(item => item.status === statusFilter);
+            }
+            
+            // Filtrer par HWID
+            const hwidFilter = document.getElementById('filter-hwid').value;
+            if (hwidFilter === 'assigned') {
+                result = result.filter(item => item.hwid && item.hwid.trim() !== '');
+            } else if (hwidFilter === 'unassigned') {
+                result = result.filter(item => !item.hwid || item.hwid.trim() === '');
+            }
+            
+            // Filtrer par recherche
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            if (searchTerm) {
+                result = result.filter(item => 
+                    item.code.toLowerCase().includes(searchTerm) ||
+                    (item.hwid && item.hwid.toLowerCase().includes(searchTerm)) ||
+                    item.date_creation.toLowerCase().includes(searchTerm) ||
+                    item.status.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Trier les résultats
+            result.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(currentSort.column) {
+                    case 'code':
+                        aVal = a.code;
+                        bVal = b.code;
+                        return currentSort.direction === 'asc' 
+                            ? aVal.localeCompare(bVal)
+                            : bVal.localeCompare(aVal);
+                    
+                    case 'date':
+                        aVal = new Date(a.date_creation.split(' ').slice(0, 4).join(' '));
+                        bVal = new Date(b.date_creation.split(' ').slice(0, 4).join(' '));
+                        return currentSort.direction === 'asc'
+                            ? aVal - bVal
+                            : bVal - aVal;
+                    
+                    case 'hwid':
+                        aVal = a.hwid || '';
+                        bVal = b.hwid || '';
+                        return currentSort.direction === 'asc'
+                            ? aVal.localeCompare(bVal)
+                            : bVal.localeCompare(aVal);
+                    
+                    case 'status':
+                        aVal = a.status;
+                        bVal = b.status;
+                        return currentSort.direction === 'asc'
+                            ? aVal.localeCompare(bVal)
+                            : bVal.localeCompare(aVal);
+                    
+                    default:
+                        return 0;
+                }
+            });
+            
+            filteredData = result;
+            displayTable();
+        }
+
+        // Afficher le tableau
+        function displayTable() {
+            const tableBody = document.getElementById('table-body');
+            const resultsCount = document.getElementById('results-count');
+            const filteredCount = document.getElementById('filtered-count');
+            
+            resultsCount.textContent = allData.length;
+            filteredCount.textContent = filteredData.length;
+            
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="no-results">
+                            <i class="fas fa-search"></i>
+                            <p style="font-size: 1.1rem; margin-bottom: 5px;">Aucune licence trouvée</p>
+                            <p style="font-size: 0.9rem;">Essayez de modifier vos filtres ou votre recherche</p>
+                        </td>
+                    </tr>`;
+                return;
+            }
+            
+            let html = "";
+            filteredData.forEach(item => {
+                const isBanni = item.status === 'banni';
+                
+                html += `
+                    <tr>
+                        <td class="code-cell"><i class="fas fa-key"></i> ${item.code}</td>
+                        <td>${item.date_creation}</td>
+                        <td class="hwid-cell">${item.hwid || '<span style="color:#9ca3af;">Non assigné</span>'}</td>
+                        <td>
+                            <span class="status-badge ${isBanni ? 'status-banni' : 'status-actif'}">
+                                <i class="fas ${isBanni ? 'fa-ban' : 'fa-check'}"></i>
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-action ${isBanni ? 'btn-success' : 'btn-danger'}" onclick="toggleStatut('${item.code}', '${item.status}')">
+                                <i class="fas ${isBanni ? 'fa-check' : 'fa-ban'}"></i>
+                                ${isBanni ? 'Réactiver' : 'Bannir'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+            
+            // Mettre à jour les indicateurs de tri
+            updateSortIndicators();
+        }
+
+        // Trier le tableau
+        function sortTable(column) {
+            // Si on clique sur la même colonne, inverser la direction
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                // Sinon, définir la nouvelle colonne et la direction par défaut
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            applyFiltersAndSort();
+        }
+
+        // Mettre à jour les indicateurs de tri dans l'en-tête
+        function updateSortIndicators() {
+            // Réinitialiser tous les en-têtes
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Appliquer la classe à la colonne actuellement triée
+            const currentTh = document.querySelector(`th[data-sort="${currentSort.column}"]`);
+            if (currentTh) {
+                currentTh.classList.add(`sort-${currentSort.direction}`);
+            }
+        }
+
+        // Gérer le changement d'ordre de tri via le select
+        document.getElementById('sort-order').addEventListener('change', function(e) {
+            const value = e.target.value;
+            
+            switch(value) {
+                case 'date-desc':
+                    currentSort = { column: 'date', direction: 'desc' };
+                    break;
+                case 'date-asc':
+                    currentSort = { column: 'date', direction: 'asc' };
+                    break;
+                case 'code-asc':
+                    currentSort = { column: 'code', direction: 'asc' };
+                    break;
+                case 'code-desc':
+                    currentSort = { column: 'code', direction: 'desc' };
+                    break;
+                case 'status':
+                    currentSort = { column: 'status', direction: 'asc' };
+                    break;
+            }
+            
+            applyFiltersAndSort();
+        });
+
+        // Réinitialiser les filtres
+        function resetFilters() {
+            document.getElementById('filter-status').value = 'all';
+            document.getElementById('filter-hwid').value = 'all';
+            document.getElementById('search-input').value = '';
+            document.getElementById('sort-order').value = 'date-desc';
+            currentSort = { column: 'date', direction: 'desc' };
+            applyFiltersAndSort();
         }
 
         // Générer un nouveau code
@@ -680,8 +1015,6 @@
             
             if(!confirm(`Voulez-vous vraiment ${action} la licence ${id} ?`)) return;
         
-            // Construction sécurisée de l'URL sans utiliser .replace() qui peut être capricieux
-            // On utilise l'ID du projet directement pour être sûr
             const url = `https://compo-d6eeb-default-rtdb.firebaseio.com/licences/${id}/status.json`;
         
             try {
@@ -698,9 +1031,7 @@
                 }
         
                 showNotification(`Licence ${id} : statut passé à ${nouveauStatut}`);
-                
-                // On rafraîchit les données pour mettre à jour le tableau et les compteurs
-                await chargerDonnees(); 
+                chargerDonnees(); 
                 
             } catch (e) {
                 console.error("Erreur détaillée:", e);
@@ -708,16 +1039,10 @@
             }
         }
 
-        // Recherche
-        document.getElementById('search-input').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const rows = document.querySelectorAll('#table-body tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
-        });
+        // Écouteurs d'événements pour les filtres
+        document.getElementById('filter-status').addEventListener('change', applyFiltersAndSort);
+        document.getElementById('filter-hwid').addEventListener('change', applyFiltersAndSort);
+        document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
 
         // Rafraîchir automatiquement toutes les 30 secondes
         setInterval(chargerDonnees, 30000);
