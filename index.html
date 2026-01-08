@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Gestion des Licences</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card h3 { margin: 0; color: #666; font-size: 14px; }
+        .stat-card p { font-size: 24px; font-weight: bold; margin: 10px 0 0; }
+        
+        .admin-container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+        
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+        .status-actif { background: #e6fffa; color: #2d6a4f; }
+        .status-banni { background: #fff5f5; color: #c53030; }
+        
+        .btn-gen { background: #00853f; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>Tableau de Bord Administrateur</h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Codes Fonctionnels</h3>
+            <p id="count-actif">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Codes Expirés/Bannis</h3>
+            <p id="count-off">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Appareils Liés</h3>
+            <p id="count-hwid">0</p>
+        </div>
+        <div class="stat-card" style="background: #00853f; color: white;">
+            <h3>Revenus Totaux (FCFA)</h3>
+            <p id="total-revenue">0</p>
+        </div>
+    </div>
+
+    <div class="admin-container">
+        <button class="btn-gen" onclick="genererNouveauCode()">+ Générer un nouveau code (1000 FCFA)</button>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Date Création</th>
+                    <th>ID Machine (HWID)</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Configuration Firebase (À remplacer par vos clés)
+        const FIREBASE_URL = "https://VOTRE-PROJET.firebaseio.com/licences.json";
+
+        async function chargerDonnees() {
+            const response = await fetch(FIREBASE_URL);
+            const data = await response.json();
+            
+            let html = "";
+            let actif = 0, banni = 0, hwidCount = 0, revenue = 0;
+
+            for (let id in data) {
+                const item = data[id];
+                if(item.status === 'actif') actif++; else banni++;
+                if(item.hwid) hwidCount++;
+                revenue += 1000;
+
+                html += `
+                    <tr>
+                        <td><strong>${id}</strong></td>
+                        <td>${item.date_creation}</td>
+                        <td>${item.hwid || '<i>En attente...</i>'}</td>
+                        <td><span class="status-badge status-${item.status}">${item.status.toUpperCase()}</span></td>
+                        <td>
+                            <button onclick="changerStatut('${id}', 'banni')">Bannir</button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('table-body').innerHTML = html;
+            document.getElementById('count-actif').innerText = actif;
+            document.getElementById('count-off').innerText = banni;
+            document.getElementById('count-hwid').innerText = hwidCount;
+            document.getElementById('total-revenue').innerText = revenue.toLocaleString() + " FCFA";
+        }
+
+        async function genererNouveauCode() {
+            const nouveauCode = "SN-" + Math.floor(1000 + Math.random() * 9000);
+            const date = new Date().toLocaleDateString('fr-FR');
+            
+            const payload = {
+                status: "actif",
+                hwid: "",
+                prix: 1000,
+                date_creation: date
+            };
+
+            // Envoi à Firebase
+            await fetch(`https://VOTRE-PROJET.firebaseio.com/licences/${nouveauCode}.json`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+            });
+
+            chargerDonnees();
+        }
+
+        window.onload = chargerDonnees;
+    </script>
+</body>
+</html>
