@@ -676,21 +676,35 @@
         // Changer le statut
         async function toggleStatut(id, actuel) {
             const nouveauStatut = actuel === 'actif' ? 'banni' : 'actif';
+            const action = nouveauStatut === 'banni' ? 'bannir' : 'réactiver';
             
-            // On construit l'URL à partir de la constante de base
-            // FIREBASE_URL vaut "https://.../licences.json"
-            // On remplace "licences.json" par "licences/ID/status.json"
-            const urlModifiee = FIREBASE_URL.replace('licences.json', `licences/${id}/status.json`);
+            if(!confirm(`Voulez-vous vraiment ${action} la licence ${id} ?`)) return;
+        
+            // Construction sécurisée de l'URL sans utiliser .replace() qui peut être capricieux
+            // On utilise l'ID du projet directement pour être sûr
+            const url = `https://compo-d6eeb-default-rtdb.firebaseio.com/licences/${id}/status.json`;
         
             try {
-                await fetch(urlModifiee, {
+                const response = await fetch(url, {
                     method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(nouveauStatut)
                 });
-                showNotification(`Statut mis à jour : ${nouveauStatut}`);
-                chargerDonnees();
+        
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la mise à jour');
+                }
+        
+                showNotification(`Licence ${id} : statut passé à ${nouveauStatut}`);
+                
+                // On rafraîchit les données pour mettre à jour le tableau et les compteurs
+                await chargerDonnees(); 
+                
             } catch (e) {
-                showNotification("Erreur de connexion", true);
+                console.error("Erreur détaillée:", e);
+                showNotification("Erreur technique : vérifiez la console", true);
             }
         }
 
