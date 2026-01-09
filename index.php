@@ -2,15 +2,15 @@
 /**
  * Script d'activation pour COMPO.EXE - Optimisé pour Render.com
  */
-ini_set('display_errors', 1);
+ini_set('display_errors', 0); // Désactivé pour ne pas casser le JSON en prod
 error_reporting(E_ALL);
-// 1. GESTION DU CORS (Indispensable pour Tauri)
+
+// 1. GESTION DU CORS
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header('Content-Type: application/json');
 
-// Si c'est une requête de pré-vérification OPTIONS, on répond 200 et on s'arrête
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -19,39 +19,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 // 2. CONFIGURATION FIREBASE
 $firebaseURL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences/";
 
-// 3. RÉCUPÉRATION DES DONNÉES
-// On vérifie d'abord le $_POST classique
+// 3. RÉCUPÉRATION DES DONNÉES (MULTIMODE)
 $code = isset($_POST['code']) ? trim($_POST['code']) : '';
 $hwid = isset($_POST['hwid']) ? trim($_POST['hwid']) : '';
 
-// Sécurité : Si le $_POST est vide (arrive parfois avec fetch), on lit le flux brut
+// Si $_POST est vide, on analyse le flux brut
 if (empty($code)) {
-    $json = file_get_contents('php://input');
-    $data = json_decode($json, true);
+    $raw_input = file_get_contents('php://input');
+    
+    // Test 1 : Est-ce du JSON ? (Envoi via plugin Tauri)
+    $data = json_decode($raw_input, true);
     if ($data) {
         $code = isset($data['code']) ? trim($data['code']) : '';
         $hwid = isset($data['hwid']) ? trim($data['hwid']) : '';
+    } 
+    // Test 2 : Est-ce une chaîne URL-encoded ? (Envoi via fetch standard)
+    else {
+        parse_str($raw_input, $output);
+        $code = isset($output['code']) ? trim($output['code']) : '';
+        $hwid = isset($output['hwid']) ? trim($output['hwid']) : '';
     }
 }
 
-// Vérification finale des données reçues
+// Vérification finale
 if (empty($code) || empty($hwid)) {
     echo json_encode([
         "status" => "error",
-        "message" => "Données manquantes (Code ou HWID)"
+        "message" => "Données manquantes (Code ou HWID)",
+        "debug_received" => "Vérifiez que vous envoyez bien les paramètres."
     ]);
     exit;
 }
 
 /**
- * FONCTION POUR COMMUNIQUER AVEC FIREBASE (CURL)
+ * FONCTION CURL POUR FIREBASE
  */
 function firebase_request($url, $method = 'GET', $data = null) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Render supporte le SSL, on laisse à true
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
     if ($data) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -86,26 +95,26 @@ if (isset($licenceData['status']) && $licenceData['status'] === 'banni') {
     exit;
 }
 
-// --- ÉTAPE C : Gestion du HWID (L'appareil unique) ---
+// --- ÉTAPE C : Gestion du HWID ---
 if (empty($licenceData['hwid'])) {
-    // CAS 1 : Première activation. On lie le code au HWID.
+    // Premier enregistrement
     firebase_request($firebaseURL . $code . ".json", 'PATCH', ['hwid' => $hwid]);
     
     echo json_encode([
         "status" => "success",
-        "message" => "Activation réussie ! Votre appareil est enregistré."
+        "message" => "Activation réussie !"
     ]);
 } else {
-    // CAS 2 : Déjà utilisé. Vérification de l'appareil.
+    // Vérification de l'appareil
     if ($licenceData['hwid'] === $hwid) {
         echo json_encode([
             "status" => "success",
-            "message" => "Licence valide (Appareil reconnu)."
+            "message" => "Licence valide."
         ]);
     } else {
         echo json_encode([
             "status" => "error",
-            "message" => "Erreur : Ce code appartient à un autre ordinateur."
+            "message" => "Ce code est déjà utilisé sur un autre ordinateur."
         ]);
     }
 }
