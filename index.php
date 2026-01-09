@@ -1,6 +1,6 @@
 <?php
 /**
- * Script d'activation universel pour COMPO.EXE - Version finale Tauri v2
+ * Script d'activation pour COMPO.EXE - Version ultime
  */
 ini_set('display_errors', 0); 
 error_reporting(0);
@@ -16,24 +16,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit;
 }
 
-// --- 2. CONFIGURATION FIREBASE ---
+// --- 2. CONFIGURATION ---
 $firebaseURL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences/";
 
 // --- 3. RÉCUPÉRATION DES DONNÉES ---
 $raw_input = file_get_contents('php://input');
 
-// Décoder le JSON
+// Log simple pour déboguer
+error_log("Input brut: " . substr($raw_input, 0, 500));
+
 $data = json_decode($raw_input, true);
 
-// DEBUG: Log simple
-file_put_contents('php://stderr', "Received: " . substr($raw_input, 0, 200) . "\n");
-
-// Tauri v2 envoie dans format: {"type":"Json","payload":{"code":"...","hwid":"..."}}
-if (isset($data['type']) && $data['type'] == 'Json' && isset($data['payload'])) {
+// Traitement spécial Tauri v2
+if (isset($data['type']) && $data['type'] === 'Json' && isset($data['payload'])) {
     $data = $data['payload'];
-}
-// Ancien format Tauri v1
-elseif (isset($data['payload'])) {
+} elseif (isset($data['payload'])) {
     if (is_string($data['payload'])) {
         $data = json_decode($data['payload'], true);
     } else {
@@ -41,112 +38,151 @@ elseif (isset($data['payload'])) {
     }
 }
 
-// Extraction des variables
+// Extraction
 $code = isset($data['code']) ? trim($data['code']) : '';
 $hwid = isset($data['hwid']) ? trim($data['hwid']) : '';
 
-// Si toujours vide, essayer $_POST
+// Fallback pour POST standard
 if (empty($code) && isset($_POST['code'])) {
     $code = trim($_POST['code']);
     $hwid = trim($_POST['hwid']);
 }
 
-// --- 4. VÉRIFICATION DES PARAMÈTRES ---
+// --- 4. VÉRIFICATION ---
 if (empty($code) || empty($hwid)) {
+    http_response_code(400);
     echo json_encode([
         "status" => "error",
-        "message" => "Données manquantes (Code ou HWID)",
-        "debug" => [
-            "received" => $raw_input,
-            "parsed" => $data,
-            "code" => $code,
-            "hwid" => $hwid
-        ]
+        "message" => "Données manquantes. Code ou HWID vide.",
+        "received_code" => $code,
+        "received_hwid" => $hwid ? "présent" : "vide"
     ]);
     exit;
 }
 
-// Nettoyer le code
+// Nettoyage
 $code = preg_replace('/[^A-Z0-9\-]/i', '', $code);
+if (strlen($code) < 5) {
+    echo json_encode(["status" => "error", "message" => "Code invalide (trop court)."]);
+    exit;
+}
 
 /**
- * FONCTION FIREBASE SIMPLIFIÉE
+ * Fonction Firebase simple
  */
-function firebase_request($url, $method = 'GET', $params = null) {
+function firebase_get($code) {
+    $url = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences/" . urlencode($code) . ".json";
+    
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
     curl_setopt($ch, CURLOPT_TIMEOUT, 5);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     
-    if ($params) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    }
-    
     $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    
+    if ($httpCode !== 200 || $response === 'null') {
+        return null;
+    }
     
     return json_decode($response, true);
 }
 
+function firebase_patch($code, $data) {
+    $url = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences/" . urlencode($code) . ".json";
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    return $response !== false;
+}
+
 // --- 5. LOGIQUE D'ACTIVATION ---
 try {
-    $licenceData = firebase_request($firebaseURL . urlencode($code) . ".json");
+    $licenceData = firebase_get($code);
     
     if ($licenceData === null) {
-        echo json_encode(["status" => "error", "message" => "Code de licence inexistant."]);
+        echo json_encode([
+            "status" => "error", 
+            "message" => "Code de licence non trouvé dans la base de données."
+        ]);
         exit;
     }
     
     // Vérifier si banni
     if (isset($licenceData['status']) && $licenceData['status'] === 'banni') {
-        echo json_encode(["status" => "error", "message" => "Cette licence est bannie."]);
+        echo json_encode(["status" => "error", "message" => "Cette licence a été bannie."]);
         exit;
     }
     
-    // Calcul date expiration
-    $expirationTimestamp = time() + (365 * 24 * 60 * 60); // 1 an
+    // Calcul de l'expiration (1 an à partir de maintenant)
+    $expirationTimestamp = time() + (365 * 24 * 60 * 60);
+    $expirationDate = date('Y-m-d', $expirationTimestamp);
     
     // Si HWID vide = première activation
     if (empty($licenceData['hwid'])) {
         $updateData = [
             'hwid' => $hwid,
-            'activated' => date('Y-m-d H:i:s'),
-            'expires' => $expirationTimestamp,
-            'last_check' => date('Y-m-d H:i:s')
+            'activated_at' => date('Y-m-d H:i:s'),
+            'expires_at' => $expirationTimestamp,
+            'last_used' => date('Y-m-d H:i:s'),
+            'activations' => 1
         ];
         
-        firebase_request($firebaseURL . urlencode($code) . ".json", 'PATCH', $updateData);
+        $success = firebase_patch($code, $updateData);
         
-        echo json_encode([
-            "status" => "success", 
-            "message" => "Activation réussie ! Licence valide 1 an.",
-            "expires" => $expirationTimestamp,
-            "code" => $code
-        ]);
+        if ($success) {
+            echo json_encode([
+                "status" => "success", 
+                "message" => "✅ Activation réussie ! Licence Premium activée pour 1 an.",
+                "expires" => $expirationTimestamp,
+                "expires_date" => $expirationDate,
+                "code" => $code
+            ]);
+        } else {
+            echo json_encode([
+                "status" => "error", 
+                "message" => "Erreur lors de la mise à jour de la licence."
+            ]);
+        }
         exit;
     }
     
     // Vérifier HWID existant
     if ($licenceData['hwid'] === $hwid) {
+        // Mettre à jour la dernière utilisation
+        firebase_patch($code, [
+            'last_used' => date('Y-m-d H:i:s')
+        ]);
+        
         echo json_encode([
             "status" => "success", 
-            "message" => "Licence valide.",
-            "expires" => isset($licenceData['expires']) ? $licenceData['expires'] : $expirationTimestamp,
+            "message" => "✅ Licence déjà activée et valide.",
+            "expires" => isset($licenceData['expires_at']) ? $licenceData['expires_at'] : $expirationTimestamp,
+            "expires_date" => isset($licenceData['expires_at']) ? date('Y-m-d', $licenceData['expires_at']) : $expirationDate,
             "code" => $code
         ]);
     } else {
         echo json_encode([
             "status" => "error", 
-            "message" => "Licence déjà utilisée sur un autre PC."
+            "message" => "❌ Cette licence est déjà utilisée sur un autre ordinateur."
         ]);
     }
     
 } catch (Exception $e) {
     echo json_encode([
         "status" => "error",
-        "message" => "Erreur serveur: " . $e->getMessage()
+        "message" => "Erreur serveur temporaire. Veuillez réessayer."
     ]);
 }
