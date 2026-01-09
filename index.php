@@ -23,15 +23,16 @@ $firebaseURL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences/";
 $raw_input = file_get_contents('php://input');
 $data = json_decode($raw_input, true);
 
-// Si Tauri envoie un objet encapsulé dans 'payload'
-if (isset($data['payload']) && is_array($data['payload'])) {
-    $data = $data['payload'];
-} 
-// Si Tauri envoie une chaîne JSON dans 'payload' (fréquent en v2)
-elseif (isset($data['payload']) && is_string($data['payload'])) {
-    $data = json_decode($data['payload'], true);
+// Si Tauri v2 a envoyé un objet encapsulé (cas du [object Object])
+if (isset($data['payload'])) {
+    if (is_string($data['payload'])) {
+        $data = json_decode($data['payload'], true);
+    } else {
+        $data = $data['payload'];
+    }
 }
 
+// Extraction finale des variables
 $code = isset($data['code']) ? trim($data['code']) : (isset($_POST['code']) ? trim($_POST['code']) : '');
 $hwid = isset($data['hwid']) ? trim($data['hwid']) : (isset($_POST['hwid']) ? trim($_POST['hwid']) : '');
 
@@ -40,7 +41,7 @@ if (empty($code) || empty($hwid)) {
     echo json_encode([
         "status" => "error",
         "message" => "Données manquantes (Code ou HWID)",
-        "debug_received" => $raw_input // Pour voir le contenu brut dans la console JS
+        "debug_received" => $raw_input // Pour voir ce qui arrive vraiment
     ]);
     exit;
 }
@@ -82,11 +83,9 @@ if (isset($licenceData['status']) && $licenceData['status'] === 'banni') {
 }
 
 if (empty($licenceData['hwid'])) {
-    // Liaison au premier appareil
     firebase_request($firebaseURL . $code . ".json", 'PATCH', ['hwid' => $hwid]);
     echo json_encode(["status" => "success", "message" => "Activation réussie !"]);
 } else {
-    // Vérification de l'appareil
     if ($licenceData['hwid'] === $hwid) {
         echo json_encode(["status" => "success", "message" => "Licence valide."]);
     } else {
