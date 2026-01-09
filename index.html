@@ -1,0 +1,1453 @@
+@@ -1,1453 +0,0 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Compo - Connexion</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary: #00853f;
+            --primary-light: #e6f4ea;
+            --danger: #e31b23;
+            --danger-light: #fee8e9;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f6f9fc 0%, #edf2f7 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--light);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 133, 63, 0.1);
+            background: white;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #006b32;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--light);
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        .login-footer {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            color: var(--gray);
+            font-size: 0.85rem;
+        }
+
+        .login-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Dashboard Styles (initialement caché) */
+        .dashboard-container {
+            display: none;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-left p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-info:hover .logout-dropdown {
+            display: block;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .logout-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 10px 0;
+            min-width: 200px;
+            display: none;
+            z-index: 100;
+        }
+
+        .logout-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--dark);
+            transition: var(--transition);
+        }
+
+        .logout-item:hover {
+            background: var(--light);
+        }
+
+        .logout-item i {
+            color: var(--danger);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-info h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--gray);
+            margin-bottom: 8px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-info p {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .stat-1 { background: #e6f4ea; color: var(--primary); }
+        .stat-2 { background: #fee8e9; color: var(--danger); }
+        .stat-3 { background: #fef3c7; color: var(--warning); }
+        .stat-4 { background: #d1fae5; color: var(--success); }
+
+        /* Main Content */
+        .admin-container {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .container-header {
+            padding: 25px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .container-header h2 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* Nouveau: Conteneur des filtres */
+        .filters-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 15px 25px;
+            border-bottom: 1px solid var(--border);
+            background: #f9fafb;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px;
+        }
+
+        .filter-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary);
+        }
+
+        .search-container {
+            flex-grow: 1;
+            max-width: 300px;
+            position: relative;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 133, 63, 0.1);
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        thead {
+            background: var(--light);
+        }
+
+        th {
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        th:hover {
+            background: #e5e7eb;
+        }
+
+        th.sortable::after {
+            content: '↕';
+            margin-left: 8px;
+            font-size: 0.8rem;
+            opacity: 0.5;
+        }
+
+        th.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+        }
+
+        th.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            transition: var(--transition);
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .code-cell {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+
+        .hwid-cell {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--gray);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-actif {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-banni {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-action {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-action:hover {
+            background: var(--light);
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: #fecaca;
+        }
+
+        .btn-success {
+            color: var(--success);
+            border-color: #a7f3d0;
+        }
+
+        /* Résultats de recherche */
+        .search-results {
+            padding: 15px 25px;
+            background: #f3f4f6;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+            color: var(--gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-results strong {
+            color: var(--primary);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: 30px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .container-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .controls {
+                width: 100%;
+            }
+            
+            .search-container {
+                max-width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            th, td {
+                padding: 12px 15px;
+            }
+            
+            .filters-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+            
+            .login-box {
+                padding: 30px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .header-left h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stat-card {
+                padding: 20px;
+            }
+            
+            .stat-info p {
+                font-size: 1.7rem;
+            }
+        }
+
+        /* Animation pour le rafraîchissement */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        tbody tr {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: var(--danger);
+        }
+
+        /* No results */
+        .no-results {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray);
+        }
+
+        .no-results i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Error message */
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Loading animation */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1><i class="fas fa-key"></i> Compo Admin</h1>
+                <p>Gestion des licences et suivi des ventes</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email Administrateur</label>
+                    <input type="email" id="email" class="form-control" placeholder="admin@compo.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Mot de passe</label>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                
+                <div id="login-error" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span id="error-text"></span>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Se connecter
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p><i class="fas fa-shield-alt"></i> Accès réservé aux administrateurs autorisés</p>
+                <p style="margin-top: 10px;">© <span id="current-year">2023</span> Compo Admin - Tous droits réservés</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard (caché initialement) -->
+    <div class="dashboard-container" id="dashboard-container">
+        <div class="container">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <h1><i class="fas fa-key"></i> Gestion des Licences Compo</h1>
+                    <p>Gestion des licences et suivi des ventes</p>
+                </div>
+                <div class="user-info" id="user-info">
+                    <div class="user-avatar" id="user-avatar">AD</div>
+                    <div>
+                        <div style="font-weight: 600;" id="user-name">Administrateur</div>
+                        <div style="font-size: 0.8rem; color: var(--gray);" id="user-email"></div>
+                    </div>
+                    <div class="logout-dropdown">
+                        <a href="#" class="logout-item" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Se déconnecter
+                        </a>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="genererNouveauCode()">
+                    <i class="fas fa-plus"></i> Nouvelle Licence (1000 FCFA)
+                </button>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-check-circle"></i> Licences Actives</h3>
+                        <p id="count-actif">0</p>
+                    </div>
+                    <div class="stat-icon stat-1">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-ban"></i> Licences Bannies</h3>
+                        <p id="count-off">0</p>
+                    </div>
+                    <div class="stat-icon stat-2">
+                        <i class="fas fa-user-slash"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-shopping-cart"></i> Total Ventes</h3>
+                        <p id="total-sales">0</p>
+                    </div>
+                    <div class="stat-icon stat-3">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-money-bill-wave"></i> Revenu Total</h3>
+                        <p id="total-revenue">0 FCFA</p>
+                    </div>
+                    <div class="stat-icon stat-4">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Container -->
+            <div class="admin-container">
+                <div class="container-header">
+                    <h2><i class="fas fa-list"></i> Liste des Licences</h2>
+                    <div class="controls">
+                        <div class="search-container">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-input" class="search-input" placeholder="Rechercher une licence...">
+                        </div>
+                        <button class="btn btn-secondary" onclick="chargerDonnees()">
+                            <i class="fas fa-sync-alt"></i> Actualiser
+                        </button>
+                        
+                    </div>
+                </div>
+                
+                <!-- Filtres -->
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="filter-status"><i class="fas fa-filter"></i> Statut</label>
+                        <select id="filter-status" class="filter-select">
+                            <option value="all">Tous les statuts</option>
+                            <option value="actif">Actif</option>
+                            <option value="banni">Banni</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-hwid"><i class="fas fa-laptop"></i> Appareil</label>
+                        <select id="filter-hwid" class="filter-select">
+                            <option value="all">Tous les appareils</option>
+                            <option value="assigned">Assigné</option>
+                            <option value="unassigned">Non assigné</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label><i class="fas fa-sort"></i> Ordre</label>
+                        <select id="sort-order" class="filter-select">
+                            <option value="date-desc">Date (Récent → Ancien)</option>
+                            <option value="date-asc">Date (Ancien → Récent)</option>
+                            <option value="code-asc">Code (A → Z)</option>
+                            <option value="code-desc">Code (Z → A)</option>
+                            <option value="status">Statut</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="resetFilters()" style="align-self: flex-end; padding: 10px 15px; font-size: 0.9rem;">
+                        <i class="fas fa-redo"></i> Réinitialiser
+                    </button>
+                </div>
+                
+                <!-- Résultats de recherche -->
+                <div class="search-results" id="search-results">
+                    <div><strong id="results-count">0</strong> licences trouvées</div>
+                    <div>Filtrées sur <strong id="filtered-count">0</strong> licences</div>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="code" onclick="sortTable('code')">Code Licence</th>
+                                <th class="sortable" data-sort="date" onclick="sortTable('date')">Date Création</th>
+                                <th class="sortable" data-sort="hwid" onclick="sortTable('hwid')">Appareil (HWID)</th>
+                                <th class="sortable" data-sort="status" onclick="sortTable('status')">Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- Les données seront insérées ici -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p><i class="far fa-copyright"></i> <span id="current-year2">2023</span> Compo Admin. Mise à jour: <span id="last-update">--:--:--</span></p>
+                <p style="font-size: 0.8rem; margin-top: 5px;">Connecté en tant que: <span id="user-email-footer"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notification-text">Opération réussie</span>
+    </div>
+
+    <script>
+        // Configuration Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBc-ZcF7Q5zojzYRhhyMgZfKb5YG8IEV78",
+            authDomain: "compo-d6eeb.firebaseapp.com",
+            databaseURL: "https://compo-d6eeb-default-rtdb.firebaseio.com",
+            projectId: "compo-d6eeb",
+            storageBucket: "compo-d6eeb.firebasestorage.app",
+            messagingSenderId: "346096756644",
+            appId: "1:346096756644:web:15c04c3c95ec2b71fd4331",
+            measurementId: "G-C80Y2J6J8M"
+        };
+
+        // Initialiser Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // URL Firebase pour les licences
+        const FIREBASE_URL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences.json";
+
+        // Variables globales pour les données et le tri
+        let allData = [];
+        let filteredData = [];
+        let currentSort = { column: 'date', direction: 'desc' };
+
+        // Mettre à jour l'année courante
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+        document.getElementById('current-year2').textContent = new Date().getFullYear();
+
+        // Fonction pour convertir les dates françaises en objet Date
+        function parseFrenchDate(dateString) {
+            try {
+                // Format attendu: "8 janvier 2025 à 14:30"
+                // Séparer la date et l'heure
+                const parts = dateString.split(' à ');
+                const datePart = parts[0]; // "8 janvier 2025"
+                const timePart = parts[1] || "00:00"; // "14:30"
+                
+                // Extraire les composants de la date
+                const dateParts = datePart.split(' ');
+                const day = parseInt(dateParts[0]);
+                const monthName = dateParts[1].toLowerCase();
+                const year = parseInt(dateParts[2]);
+                
+                // Mapping des mois français
+                const monthMap = {
+                    'janvier': 0, 'février': 1, 'mars': 2, 'avril': 3, 'mai': 4, 'juin': 5,
+                    'juillet': 6, 'août': 7, 'septembre': 8, 'octobre': 9, 'novembre': 10, 'décembre': 11
+                };
+                
+                // Extraire l'heure
+                const timeParts = timePart.split(':');
+                const hours = parseInt(timeParts[0]) || 0;
+                const minutes = parseInt(timeParts[1]) || 0;
+                
+                // Créer l'objet Date
+                return new Date(year, monthMap[monthName], day, hours, minutes);
+            } catch (error) {
+                console.error("Erreur de parsing de date:", dateString, error);
+                // Retourner une date très ancienne en cas d'erreur
+                return new Date(0);
+            }
+        }
+
+        // Afficher une notification
+        function showNotification(message, isError = false) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            notification.className = `notification ${isError ? 'error' : ''}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Afficher une erreur de connexion
+        function showLoginError(message) {
+            const errorDiv = document.getElementById('login-error');
+            const errorText = document.getElementById('error-text');
+            
+            errorText.textContent = message;
+            errorDiv.style.display = 'flex';
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Basculer entre login et dashboard
+        function showDashboard() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('dashboard-container').style.display = 'block';
+        }
+
+        function showLogin() {
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('dashboard-container').style.display = 'none';
+        }
+
+        // Gestion de la connexion
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            
+            // Sauvegarder le texte original du bouton
+            const originalText = loginBtn.innerHTML;
+            
+            // Afficher le loader
+            loginBtn.innerHTML = '<div class="loader"></div> Connexion...';
+            loginBtn.disabled = true;
+            
+            try {
+                // Se connecter avec Firebase Authentication
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                
+                // Afficher le dashboard
+                showDashboard();
+                
+                // Mettre à jour l'interface utilisateur
+                const user = userCredential.user;
+                updateUserInfo(user);
+                
+                // Charger les données
+                chargerDonnees();
+                
+                showNotification(`Bienvenue ${user.email}`);
+                
+            } catch (error) {
+                console.error("Erreur de connexion:", error);
+                
+                // Gérer les erreurs spécifiques
+                let errorMessage = "Erreur de connexion";
+                switch(error.code) {
+                    case 'auth/invalid-email':
+                        errorMessage = "Email invalide";
+                        break;
+                    case 'auth/user-disabled':
+                        errorMessage = "Compte désactivé";
+                        break;
+                    case 'auth/user-not-found':
+                        errorMessage = "Utilisateur non trouvé";
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = "Mot de passe incorrect";
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = "Trop de tentatives. Réessayez plus tard";
+                        break;
+                }
+                
+                showLoginError(errorMessage);
+            } finally {
+                // Restaurer le bouton
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        });
+
+        // Mettre à jour les informations utilisateur
+        function updateUserInfo(user) {
+            const userName = document.getElementById('user-name');
+            const userEmail = document.getElementById('user-email');
+            const userEmailFooter = document.getElementById('user-email-footer');
+            const userAvatar = document.getElementById('user-avatar');
+            
+            // Extraire les initiales
+            const initials = user.email.substring(0, 2).toUpperCase();
+            
+            // Mettre à jour l'interface
+            userName.textContent = user.email.split('@')[0];
+            userEmail.textContent = user.email;
+            userEmailFooter.textContent = user.email;
+            userAvatar.textContent = initials;
+        }
+
+        // Déconnexion
+        function logout() {
+            if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
+                auth.signOut().then(() => {
+                    showLogin();
+                    showNotification("Déconnexion réussie");
+                    
+                    // Réinitialiser le formulaire
+                    document.getElementById('login-form').reset();
+                }).catch((error) => {
+                    console.error("Erreur de déconnexion:", error);
+                    showNotification("Erreur lors de la déconnexion", true);
+                });
+            }
+        }
+
+        // Vérifier l'état d'authentification au chargement
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Utilisateur connecté
+                showDashboard();
+                updateUserInfo(user);
+                chargerDonnees();
+            } else {
+                // Utilisateur non connecté
+                showLogin();
+            }
+        });
+
+        // Charger les données
+        async function chargerDonnees() {
+            try {
+                document.body.classList.add('loading');
+                const response = await fetch(FIREBASE_URL);
+                const data = await response.json();
+                
+                // Transformer les données en tableau
+                allData = [];
+                if (data) {
+                    for (let id in data) {
+                        allData.push({
+                            id: id,
+                            code: id,
+                            date_creation: data[id].date_creation,
+                            date_creation_parsed: parseFrenchDate(data[id].date_creation),
+                            hwid: data[id].hwid || '',
+                            status: data[id].status || 'actif'
+                        });
+                    }
+                }
+                
+                // Appliquer les filtres et tri
+                applyFiltersAndSort();
+                
+                // Mettre à jour les statistiques
+                updateStats(allData);
+                
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+                document.getElementById('last-update').innerText = timeStr;
+                
+                showNotification(`${allData.length} licences chargées`);
+                
+            } catch (e) {
+                console.error("Erreur Firebase : ", e);
+                showNotification("Erreur de connexion à la base de données", true);
+            } finally {
+                document.body.classList.remove('loading');
+            }
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats(data) {
+            let actif = 0, banni = 0, ventes = 0;
+            
+            data.forEach(item => {
+                if(item.status === 'banni') banni++;
+                else actif++;
+                ventes++;
+            });
+            
+            document.getElementById('count-actif').innerText = actif;
+            document.getElementById('count-off').innerText = banni;
+            document.getElementById('total-sales').innerText = ventes;
+            document.getElementById('total-revenue').innerText = (ventes * 1000).toLocaleString('fr-FR') + " FCFA";
+        }
+
+        // Appliquer les filtres et le tri
+        function applyFiltersAndSort() {
+            let result = [...allData];
+            
+            // Filtrer par statut
+            const statusFilter = document.getElementById('filter-status').value;
+            if (statusFilter !== 'all') {
+                result = result.filter(item => item.status === statusFilter);
+            }
+            
+            // Filtrer par HWID
+            const hwidFilter = document.getElementById('filter-hwid').value;
+            if (hwidFilter === 'assigned') {
+                result = result.filter(item => item.hwid && item.hwid.trim() !== '');
+            } else if (hwidFilter === 'unassigned') {
+                result = result.filter(item => !item.hwid || item.hwid.trim() === '');
+            }
+            
+            // Filtrer par recherche
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            if (searchTerm) {
+                result = result.filter(item => 
+                    item.code.toLowerCase().includes(searchTerm) ||
+                    (item.hwid && item.hwid.toLowerCase().includes(searchTerm)) ||
+                    item.date_creation.toLowerCase().includes(searchTerm) ||
+                    item.status.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Trier les résultats
+            result.sort((a, b) => {
+                let aVal, bVal;
+                
+                switch(currentSort.column) {
+                    case 'code':
+                        aVal = a.code;
+                        bVal = b.code;
+                        return currentSort.direction === 'asc' 
+                            ? aVal.localeCompare(bVal)
+                            : bVal.localeCompare(aVal);
+                    
+                    case 'date':
+                        // Utiliser la date déjà parsée
+                        aVal = a.date_creation_parsed;
+                        bVal = b.date_creation_parsed;
+                        return currentSort.direction === 'asc'
+                            ? aVal - bVal
+                            : bVal - aVal;
+                    
+                    case 'hwid':
+                        aVal = a.hwid || '';
+                        bVal = b.hwid || '';
+                        return currentSort.direction === 'asc'
+                            ? aVal.localeCompare(bVal)
+                            : bVal.localeCompare(aVal);
+                    
+                    case 'status':
+                        aVal = a.status;
+                        bVal = b.status;
+                        return currentSort.direction === 'asc'
+                            ? aVal.localeCompare(bVal)
+                            : bVal.localeCompare(aVal);
+                    
+                    default:
+                        return 0;
+                }
+            });
+            
+            filteredData = result;
+            displayTable();
+        }
+
+        // Afficher le tableau
+        function displayTable() {
+            const tableBody = document.getElementById('table-body');
+            const resultsCount = document.getElementById('results-count');
+            const filteredCount = document.getElementById('filtered-count');
+            
+            resultsCount.textContent = allData.length;
+            filteredCount.textContent = filteredData.length;
+            
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="no-results">
+                            <i class="fas fa-search"></i>
+                            <p style="font-size: 1.1rem; margin-bottom: 5px;">Aucune licence trouvée</p>
+                            <p style="font-size: 0.9rem;">Essayez de modifier vos filtres ou votre recherche</p>
+                        </td>
+                    </tr>`;
+                return;
+            }
+            
+            let html = "";
+            filteredData.forEach(item => {
+                const isBanni = item.status === 'banni';
+                
+                html += `
+                    <tr>
+                        <td class="code-cell"><i class="fas fa-key"></i> ${item.code}</td>
+                        <td>${item.date_creation}</td>
+                        <td class="hwid-cell">${item.hwid || '<span style="color:#9ca3af;">Non assigné</span>'}</td>
+                        <td>
+                            <span class="status-badge ${isBanni ? 'status-banni' : 'status-actif'}">
+                                <i class="fas ${isBanni ? 'fa-ban' : 'fa-check'}"></i>
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-action ${isBanni ? 'btn-success' : 'btn-danger'}" onclick="toggleStatut('${item.code}', '${item.status}')">
+                                <i class="fas ${isBanni ? 'fa-check' : 'fa-ban'}"></i>
+                                ${isBanni ? 'Réactiver' : 'Bannir'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+            
+            // Mettre à jour les indicateurs de tri
+            updateSortIndicators();
+        }
+
+        // Trier le tableau
+        function sortTable(column) {
+            // Si on clique sur la même colonne, inverser la direction
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                // Sinon, définir la nouvelle colonne et la direction par défaut
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            applyFiltersAndSort();
+        }
+
+        // Mettre à jour les indicateurs de tri dans l'en-tête
+        function updateSortIndicators() {
+            // Réinitialiser tous les en-têtes
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Appliquer la classe à la colonne actuellement triée
+            const currentTh = document.querySelector(`th[data-sort="${currentSort.column}"]`);
+            if (currentTh) {
+                currentTh.classList.add(`sort-${currentSort.direction}`);
+            }
+        }
+
+        // Gérer le changement d'ordre de tri via le select
+        document.getElementById('sort-order').addEventListener('change', function(e) {
+            const value = e.target.value;
+            
+            switch(value) {
+                case 'date-desc':
+                    currentSort = { column: 'date', direction: 'desc' };
+                    break;
+                case 'date-asc':
+                    currentSort = { column: 'date', direction: 'asc' };
+                    break;
+                case 'code-asc':
+                    currentSort = { column: 'code', direction: 'asc' };
+                    break;
+                case 'code-desc':
+                    currentSort = { column: 'code', direction: 'desc' };
+                    break;
+                case 'status':
+                    currentSort = { column: 'status', direction: 'asc' };
+                    break;
+            }
+            
+            applyFiltersAndSort();
+        });
+
+        // Réinitialiser les filtres
+        function resetFilters() {
+            document.getElementById('filter-status').value = 'all';
+            document.getElementById('filter-hwid').value = 'all';
+            document.getElementById('search-input').value = '';
+            document.getElementById('sort-order').value = 'date-desc';
+            currentSort = { column: 'date', direction: 'desc' };
+            applyFiltersAndSort();
+        }
+
+        // Générer un nouveau code
+        async function genererNouveauCode() {
+            const prefix = "COMPO-";
+            const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const nouveauCode = prefix + randomId;
+            
+            // Créer une date complète avec heure et minutes
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('fr-FR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric'
+            }) + ' à ' + now.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const payload = {
+                status: "actif",
+                hwid: "",
+                date_creation: formattedDate
+            };
+
+            try {
+                const response = await fetch(`https://compo-d6eeb-default-rtdb.firebaseio.com/licences/${nouveauCode}.json`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+            
+                if (!response.ok) throw new Error('Réponse serveur incorrecte');
+            
+                showNotification(`Licence ${nouveauCode} générée (1000 FCFA enregistrés)`);
+                chargerDonnees(); // Rafraîchit le tableau et le revenu total
+            } catch (e) {
+                console.error(e);
+                showNotification("Échec : vérifiez votre connexion ou les règles Firebase", true);
+            }
+        }
+
+        // Changer le statut
+        async function toggleStatut(id, actuel) {
+            const nouveauStatut = actuel === 'actif' ? 'banni' : 'actif';
+            const action = nouveauStatut === 'banni' ? 'bannir' : 'réactiver';
+            
+            if(!confirm(`Voulez-vous vraiment ${action} la licence ${id} ?`)) return;
+        
+            const url = `https://compo-d6eeb-default-rtdb.firebaseio.com/licences/${id}/status.json`;
+        
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(nouveauStatut)
+                });
+        
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la mise à jour');
+                }
+        
+                showNotification(`Licence ${id} : statut passé à ${nouveauStatut}`);
+                chargerDonnees(); 
+                
+            } catch (e) {
+                console.error("Erreur détaillée:", e);
+                showNotification("Erreur technique : vérifiez la console", true);
+            }
+        }
+
+        // Écouteurs d'événements pour les filtres
+        document.getElementById('filter-status').addEventListener('change', applyFiltersAndSort);
+        document.getElementById('filter-hwid').addEventListener('change', applyFiltersAndSort);
+        document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
+
+        // Rafraîchir automatiquement toutes les 30 secondes
+        setInterval(chargerDonnees, 30000);
+        
+        // Pré-remplir avec un email de test (facultatif)
+        // document.getElementById('email').value = 'admin@compo.com';
+    </script>
+</body>
