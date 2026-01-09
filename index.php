@@ -1,8 +1,8 @@
 <?php
 /**
- * Script d'activation pour COMPO.EXE - Optimisé pour Render.com
+ * Script d'activation pour COMPO.EXE - Version JSON Robuste
  */
-ini_set('display_errors', 0); // Désactivé pour ne pas casser le JSON en prod
+ini_set('display_errors', 0); 
 error_reporting(E_ALL);
 
 // 1. GESTION DU CORS
@@ -19,26 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 // 2. CONFIGURATION FIREBASE
 $firebaseURL = "https://compo-d6eeb-default-rtdb.firebaseio.com/licences/";
 
-// 3. RÉCUPÉRATION DES DONNÉES (MULTIMODE)
-$code = isset($_POST['code']) ? trim($_POST['code']) : '';
-$hwid = isset($_POST['hwid']) ? trim($_POST['hwid']) : '';
+// 3. RÉCUPÉRATION DES DONNÉES (FLUX JSON)
+$raw_input = file_get_contents('php://input');
+$data = json_decode($raw_input, true);
 
-// Si $_POST est vide, on analyse le flux brut
+// Extraction des variables depuis le JSON
+$code = isset($data['code']) ? trim($data['code']) : '';
+$hwid = isset($data['hwid']) ? trim($data['hwid']) : '';
+
+// Secours : Si ce n'était pas du JSON, on teste le $_POST classique
 if (empty($code)) {
-    $raw_input = file_get_contents('php://input');
-    
-    // Test 1 : Est-ce du JSON ? (Envoi via plugin Tauri)
-    $data = json_decode($raw_input, true);
-    if ($data) {
-        $code = isset($data['code']) ? trim($data['code']) : '';
-        $hwid = isset($data['hwid']) ? trim($data['hwid']) : '';
-    } 
-    // Test 2 : Est-ce une chaîne URL-encoded ? (Envoi via fetch standard)
-    else {
-        parse_str($raw_input, $output);
-        $code = isset($output['code']) ? trim($output['code']) : '';
-        $hwid = isset($output['hwid']) ? trim($output['hwid']) : '';
-    }
+    $code = isset($_POST['code']) ? trim($_POST['code']) : '';
+    $hwid = isset($_POST['hwid']) ? trim($_POST['hwid']) : '';
 }
 
 // Vérification finale
@@ -46,7 +38,7 @@ if (empty($code) || empty($hwid)) {
     echo json_encode([
         "status" => "error",
         "message" => "Données manquantes (Code ou HWID)",
-        "debug_received" => "Vérifiez que vous envoyez bien les paramètres."
+        "debug_raw" => $raw_input // Permet de voir dans ta console JS ce que le PHP a vraiment reçu
     ]);
     exit;
 }
@@ -71,11 +63,11 @@ function firebase_request($url, $method = 'GET', $data = null) {
     $error = curl_error($ch);
     curl_close($ch);
 
-    if ($error) return null;
-    return json_decode($response, true);
+    return ($error) ? null : json_decode($response, true);
 }
 
-// --- ÉTAPE A : Vérifier si la licence existe ---
+// --- LOGIQUE DE VÉRIFICATION ---
+
 $licenceData = firebase_request($firebaseURL . $code . ".json");
 
 if ($licenceData === null || empty($licenceData)) {
@@ -86,7 +78,6 @@ if ($licenceData === null || empty($licenceData)) {
     exit;
 }
 
-// --- ÉTAPE B : Vérifier si la licence est bannie ---
 if (isset($licenceData['status']) && $licenceData['status'] === 'banni') {
     echo json_encode([
         "status" => "error", 
@@ -95,17 +86,16 @@ if (isset($licenceData['status']) && $licenceData['status'] === 'banni') {
     exit;
 }
 
-// --- ÉTAPE C : Gestion du HWID ---
 if (empty($licenceData['hwid'])) {
-    // Premier enregistrement
+    // Premier enregistrement du HWID
     firebase_request($firebaseURL . $code . ".json", 'PATCH', ['hwid' => $hwid]);
     
     echo json_encode([
         "status" => "success",
-        "message" => "Activation réussie !"
+        "message" => "Activation réussie ! Appareil enregistré."
     ]);
 } else {
-    // Vérification de l'appareil
+    // Vérification si le HWID correspond
     if ($licenceData['hwid'] === $hwid) {
         echo json_encode([
             "status" => "success",
