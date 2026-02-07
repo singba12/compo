@@ -17,6 +17,8 @@
             --danger-light: #fee8e9;
             --warning: #f59e0b;
             --success: #10b981;
+            --expired: #8b5cf6;
+            --expired-light: #ede9fe;
             --dark: #1f2937;
             --light: #f8fafc;
             --gray: #6b7280;
@@ -307,6 +309,7 @@
         .stat-2 { background: #fee8e9; color: var(--danger); }
         .stat-3 { background: #fef3c7; color: var(--warning); }
         .stat-4 { background: #d1fae5; color: var(--success); }
+        .stat-5 { background: #ede9fe; color: var(--expired); }
 
         /* Main Content */
         .admin-container {
@@ -515,6 +518,11 @@
             color: #991b1b;
         }
 
+        .status-expire {
+            background: var(--expired-light);
+            color: var(--expired);
+        }
+
         .btn-action {
             padding: 8px 16px;
             border-radius: 6px;
@@ -541,6 +549,11 @@
         .btn-success {
             color: var(--success);
             border-color: #a7f3d0;
+        }
+
+        .btn-warning {
+            color: var(--warning);
+            border-color: #fef3c7;
         }
 
         /* Résultats de recherche */
@@ -674,6 +687,10 @@
 
         .notification.error {
             background: var(--danger);
+        }
+
+        .notification.warning {
+            background: var(--warning);
         }
 
         /* No results */
@@ -994,6 +1011,51 @@
             letter-spacing: 1px;
             color: var(--primary);
         }
+
+        /* Expiration Info */
+        .expiration-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: #f3f4f6;
+            color: var(--gray);
+            margin-left: 10px;
+        }
+
+        .expiration-info.expiring {
+            background: #fef3c7;
+            color: var(--warning);
+        }
+
+        .expiration-info.expired {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        /* Date cell styling */
+        .date-cell {
+            position: relative;
+        }
+
+        .date-cell.expiring-soon {
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .date-cell.expired {
+            color: var(--danger);
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        /* Stats pour les codes expirés */
+        .stat-5 .stat-icon {
+            background: var(--expired-light);
+            color: var(--expired);
+        }
     </style>
 </head>
 <body>
@@ -1040,7 +1102,7 @@
             <header class="header">
                 <div class="header-left">
                     <h1><i class="fas fa-key"></i> Gestion des Licences Compo</h1>
-                    <p>Gestion des licences et suivi des ventes</p>
+                    <p>Gestion des licences - Durée de validité: 1 an</p>
                 </div>
                 <div class="user-info" id="user-info">
                     <div class="user-avatar" id="user-avatar">AD</div>
@@ -1118,6 +1180,15 @@
                         <i class="fas fa-coins"></i>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <h3><i class="fas fa-clock"></i> Codes Expirés</h3>
+                        <p id="count-expired">0</p>
+                    </div>
+                    <div class="stat-icon stat-5">
+                        <i class="fas fa-hourglass-end"></i>
+                    </div>
+                </div>
             </div>
 
             <!-- Main Container -->
@@ -1143,6 +1214,7 @@
                             <option value="all">Tous les statuts</option>
                             <option value="actif">Actif</option>
                             <option value="banni">Banni</option>
+                            <option value="expire">Expiré</option>
                         </select>
                     </div>
                     
@@ -1156,6 +1228,16 @@
                     </div>
                     
                     <div class="filter-group">
+                        <label for="filter-expiration"><i class="fas fa-clock"></i> Expiration</label>
+                        <select id="filter-expiration" class="filter-select">
+                            <option value="all">Toutes</option>
+                            <option value="expired">Expirées</option>
+                            <option value="expiring">Bientôt expirées (30j)</option>
+                            <option value="valid">Valides</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
                         <label><i class="fas fa-sort"></i> Ordre</label>
                         <select id="sort-order" class="filter-select">
                             <option value="date-desc">Date (Récent → Ancien)</option>
@@ -1163,6 +1245,7 @@
                             <option value="code-asc">Code (A → Z)</option>
                             <option value="code-desc">Code (Z → A)</option>
                             <option value="status">Statut</option>
+                            <option value="expiration">Date d'expiration</option>
                         </select>
                     </div>
                     
@@ -1175,6 +1258,7 @@
                 <div class="search-results" id="search-results">
                     <div><strong id="results-count">0</strong> licences trouvées</div>
                     <div>Filtrées sur <strong id="filtered-count">0</strong> licences</div>
+                    <div id="expiration-summary" style="font-size: 0.85rem;"></div>
                 </div>
                 
                 <div class="table-wrapper">
@@ -1183,6 +1267,7 @@
                             <tr>
                                 <th class="sortable" data-sort="code" onclick="sortTable('code')">Code Licence</th>
                                 <th class="sortable" data-sort="date" onclick="sortTable('date')">Date Création</th>
+                                <th class="sortable" data-sort="expiration" onclick="sortTable('expiration')">Expiration</th>
                                 <th class="sortable" data-sort="hwid" onclick="sortTable('hwid')">Appareil (HWID)</th>
                                 <th class="sortable" data-sort="status" onclick="sortTable('status')">Statut</th>
                                 <th>Actions</th>
@@ -1199,6 +1284,9 @@
             <div class="footer">
                 <p><i class="far fa-copyright"></i> <span id="current-year2">2023</span> Compo Admin. Mise à jour: <span id="last-update">--:--:--</span></p>
                 <p style="font-size: 0.8rem; margin-top: 5px;">Connecté en tant que: <span id="user-email-footer"></span></p>
+                <p style="font-size: 0.75rem; margin-top: 5px; color: var(--warning);">
+                    <i class="fas fa-exclamation-triangle"></i> Les codes expirent automatiquement après 1 an
+                </p>
             </div>
         </div>
     </div>
@@ -1237,9 +1325,12 @@
         let searchTimeout = null;
         let generatedCodesCache = [];
 
-        // Caractères autorisés pour les codes (sans 0 et O)
+        // Durée de validité en millisecondes (1 an)
+        const VALIDITY_DURATION_MS = 365 * 24 * 60 * 60 * 1000; // 1 an en millisecondes
+        const EXPIRING_SOON_DAYS = 30; // Jours avant expiration pour alerte
+
+        // Caractères autorisés pour les codes (sans 0 et sans O)
         const ALLOWED_CHARS = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789";
-        // Vérification : 34 caractères (26 lettres - O + 9 chiffres - 0)
 
         // Fonction pour générer un code à 4 caractères
         function generate4CharCode() {
@@ -1251,9 +1342,76 @@
             return code;
         }
 
+        // Fonction pour calculer la date d'expiration
+        function calculateExpirationDate(creationDate) {
+            if (!creationDate) return null;
+            
+            const creation = parseFrenchDate(creationDate);
+            if (creation.getTime() === 0) return null;
+            
+            const expiration = new Date(creation.getTime() + VALIDITY_DURATION_MS);
+            return expiration;
+        }
+
+        // Fonction pour vérifier si un code est expiré
+        function isCodeExpired(creationDate) {
+            const expirationDate = calculateExpirationDate(creationDate);
+            if (!expirationDate) return false;
+            
+            const now = new Date();
+            return now > expirationDate;
+        }
+
+        // Fonction pour vérifier si un code expire bientôt (dans les 30 jours)
+        function isCodeExpiringSoon(creationDate) {
+            const expirationDate = calculateExpirationDate(creationDate);
+            if (!expirationDate) return false;
+            
+            const now = new Date();
+            const timeUntilExpiration = expirationDate.getTime() - now.getTime();
+            const daysUntilExpiration = timeUntilExpiration / (1000 * 60 * 60 * 24);
+            
+            return daysUntilExpiration > 0 && daysUntilExpiration <= EXPIRING_SOON_DAYS;
+        }
+
+        // Fonction pour formater la date d'expiration
+        function formatExpirationDate(creationDate) {
+            const expirationDate = calculateExpirationDate(creationDate);
+            if (!expirationDate) return "Date inconnue";
+            
+            const now = new Date();
+            const timeUntilExpiration = expirationDate.getTime() - now.getTime();
+            const daysUntilExpiration = Math.ceil(timeUntilExpiration / (1000 * 60 * 60 * 24));
+            
+            if (daysUntilExpiration < 0) {
+                return `Expiré il y a ${Math.abs(daysUntilExpiration)} jour(s)`;
+            } else if (daysUntilExpiration === 0) {
+                return "Expire aujourd'hui";
+            } else if (daysUntilExpiration <= 7) {
+                return `Expire dans ${daysUntilExpiration} jour(s)`;
+            } else {
+                return expirationDate.toLocaleDateString('fr-FR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        }
+
+        // Fonction pour obtenir le statut d'expiration
+        function getExpirationStatus(creationDate) {
+            if (isCodeExpired(creationDate)) {
+                return 'expired';
+            } else if (isCodeExpiringSoon(creationDate)) {
+                return 'expiring';
+            } else {
+                return 'valid';
+            }
+        }
+
         // Fonction pour vérifier si un code existe déjà
         function isCodeUnique(code, existingCodes) {
-            return !existingCodes.includes(code);
+            return !existingCodes.includes(code.toUpperCase());
         }
 
         // Fonction debounce
@@ -1310,12 +1468,12 @@
         }
 
         // Afficher une notification
-        function showNotification(message, isError = false) {
+        function showNotification(message, isError = false, isWarning = false) {
             const notification = document.getElementById('notification');
             const notificationText = document.getElementById('notification-text');
             
             notificationText.textContent = message;
-            notification.className = `notification ${isError ? 'error' : ''}`;
+            notification.className = `notification ${isError ? 'error' : ''} ${isWarning ? 'warning' : ''}`;
             notification.classList.add('show');
             
             setTimeout(() => {
@@ -1450,13 +1608,23 @@
                 allData = [];
                 if (data) {
                     for (let id in data) {
+                        const itemData = data[id];
+                        const creationDate = itemData.date_creation;
+                        const isExpired = isCodeExpired(creationDate);
+                        
                         allData.push({
                             id: id,
                             code: id,
-                            date_creation: data[id].date_creation,
-                            date_creation_parsed: parseFrenchDate(data[id].date_creation),
-                            hwid: data[id].hwid || '',
-                            status: data[id].status || 'actif'
+                            date_creation: creationDate,
+                            date_creation_parsed: parseFrenchDate(creationDate),
+                            hwid: itemData.hwid || '',
+                            // Si le code est expiré, le statut devient "expire"
+                            // Sauf s'il est déjà banni
+                            status: itemData.status === 'banni' ? 'banni' : 
+                                   (isExpired ? 'expire' : (itemData.status || 'actif')),
+                            expiration_date: calculateExpirationDate(creationDate),
+                            expiration_status: getExpirationStatus(creationDate),
+                            days_until_expiration: calculateDaysUntilExpiration(creationDate)
                         });
                     }
                 }
@@ -1468,6 +1636,9 @@
                 const timeStr = now.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit', second: '2-digit'});
                 document.getElementById('last-update').innerText = timeStr;
                 
+                // Vérifier les codes expirés
+                checkForExpiredCodes();
+                
                 showNotification(`${allData.length} licences chargées`);
                 
             } catch (e) {
@@ -1478,31 +1649,103 @@
             }
         }
 
+        // Calculer les jours restants avant expiration
+        function calculateDaysUntilExpiration(creationDate) {
+            const expirationDate = calculateExpirationDate(creationDate);
+            if (!expirationDate) return null;
+            
+            const now = new Date();
+            const diffTime = expirationDate.getTime() - now.getTime();
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
         // Mettre à jour les statistiques
         function updateStats(data) {
-            let actif = 0, banni = 0, ventes = 0;
+            let actif = 0, banni = 0, expire = 0, ventes = 0;
+            let expiringSoon = 0;
             
             data.forEach(item => {
-                if(item.status === 'banni') banni++;
-                else actif++;
+                if (item.status === 'banni') {
+                    banni++;
+                } else if (item.status === 'expire') {
+                    expire++;
+                } else {
+                    actif++;
+                }
                 ventes++;
+                
+                // Compter les codes qui expirent bientôt
+                if (item.expiration_status === 'expiring') {
+                    expiringSoon++;
+                }
             });
             
             document.getElementById('count-actif').innerText = actif;
             document.getElementById('count-off').innerText = banni;
+            document.getElementById('count-expired').innerText = expire;
             document.getElementById('total-sales').innerText = ventes;
             document.getElementById('total-revenue').innerText = (ventes * 1000).toLocaleString('fr-FR') + " FCFA";
+            
+            // Mettre à jour le résumé d'expiration
+            const summaryElement = document.getElementById('expiration-summary');
+            if (expiringSoon > 0) {
+                summaryElement.innerHTML = `<span style="color: var(--warning);">
+                    <i class="fas fa-exclamation-triangle"></i> ${expiringSoon} code(s) expire(nt) bientôt
+                </span>`;
+            } else {
+                summaryElement.innerHTML = '';
+            }
+        }
+
+        // Vérifier et marquer les codes expirés
+        async function checkForExpiredCodes() {
+            const expiredCodes = allData.filter(item => 
+                item.status !== 'banni' && 
+                item.status !== 'expire' && 
+                isCodeExpired(item.date_creation)
+            );
+            
+            if (expiredCodes.length > 0) {
+                let updatedCount = 0;
+                
+                for (const codeData of expiredCodes) {
+                    try {
+                        const url = `${FIREBASE_BASE_URL}/licences/${codeData.code}/status.json`;
+                        const response = await fetch(url, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify('expire')
+                        });
+                        
+                        if (response.ok) {
+                            updatedCount++;
+                        }
+                    } catch (error) {
+                        console.error(`Erreur lors de la mise à jour du code ${codeData.code}:`, error);
+                    }
+                }
+                
+                if (updatedCount > 0) {
+                    showNotification(`${updatedCount} code(s) marqué(s) comme expiré(s)`, false, true);
+                    // Recharger les données après la mise à jour
+                    setTimeout(chargerDonnees, 1000);
+                }
+            }
         }
 
         // Appliquer les filtres et le tri
         function applyFiltersAndSort() {
             let result = [...allData];
             
+            // Filtrer par statut
             const statusFilter = document.getElementById('filter-status').value;
             if (statusFilter !== 'all') {
                 result = result.filter(item => item.status === statusFilter);
             }
             
+            // Filtrer par HWID
             const hwidFilter = document.getElementById('filter-hwid').value;
             if (hwidFilter === 'assigned') {
                 result = result.filter(item => item.hwid && item.hwid.trim() !== '');
@@ -1510,6 +1753,22 @@
                 result = result.filter(item => !item.hwid || item.hwid.trim() === '');
             }
             
+            // Filtrer par expiration
+            const expirationFilter = document.getElementById('filter-expiration').value;
+            if (expirationFilter !== 'all') {
+                result = result.filter(item => {
+                    if (expirationFilter === 'expired') {
+                        return item.expiration_status === 'expired';
+                    } else if (expirationFilter === 'expiring') {
+                        return item.expiration_status === 'expiring';
+                    } else if (expirationFilter === 'valid') {
+                        return item.expiration_status === 'valid';
+                    }
+                    return true;
+                });
+            }
+            
+            // Filtrer par recherche
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
             if (searchTerm) {
                 result = result.filter(item => 
@@ -1520,6 +1779,7 @@
                 );
             }
             
+            // Trier les résultats
             result.sort((a, b) => {
                 let aVal, bVal;
                 
@@ -1534,6 +1794,13 @@
                     case 'date':
                         aVal = a.date_creation_parsed || new Date(0);
                         bVal = b.date_creation_parsed || new Date(0);
+                        return currentSort.direction === 'asc'
+                            ? aVal - bVal
+                            : bVal - aVal;
+                    
+                    case 'expiration':
+                        aVal = a.expiration_date || new Date(0);
+                        bVal = b.expiration_date || new Date(0);
                         return currentSort.direction === 'asc'
                             ? aVal - bVal
                             : bVal - aVal;
@@ -1573,7 +1840,7 @@
             if (filteredData.length === 0) {
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="no-results">
+                        <td colspan="6" class="no-results">
                             <i class="fas fa-search"></i>
                             <p style="font-size: 1.1rem; margin-bottom: 5px;">Aucune licence trouvée</p>
                             <p style="font-size: 0.9rem;">Essayez de modifier vos filtres ou votre recherche</p>
@@ -1585,24 +1852,73 @@
             let html = "";
             filteredData.forEach(item => {
                 const isBanni = item.status === 'banni';
+                const isExpired = item.status === 'expire';
+                const isExpiringSoon = item.expiration_status === 'expiring';
+                
+                // Déterminer la classe CSS pour la date
+                let dateClass = '';
+                if (isExpired) {
+                    dateClass = 'expired';
+                } else if (isExpiringSoon) {
+                    dateClass = 'expiring-soon';
+                }
+                
+                // Déterminer le badge de statut
+                let statusBadgeClass = '';
+                let statusIcon = '';
+                let statusText = '';
+                
+                if (isBanni) {
+                    statusBadgeClass = 'status-banni';
+                    statusIcon = 'fa-ban';
+                    statusText = 'Banni';
+                } else if (isExpired) {
+                    statusBadgeClass = 'status-expire';
+                    statusIcon = 'fa-hourglass-end';
+                    statusText = 'Expiré';
+                } else {
+                    statusBadgeClass = 'status-actif';
+                    statusIcon = 'fa-check';
+                    statusText = 'Actif';
+                }
+                
+                // Déterminer les actions disponibles
+                let actionButton = '';
+                if (isBanni) {
+                    actionButton = `<button class="btn-action btn-success" onclick="toggleStatut('${item.code}', '${item.status}')">
+                        <i class="fas fa-check"></i> Réactiver
+                    </button>`;
+                } else if (isExpired) {
+                    actionButton = `<button class="btn-action btn-warning" onclick="renewCode('${item.code}')">
+                        <i class="fas fa-redo"></i> Renouveler
+                    </button>`;
+                } else {
+                    actionButton = `<button class="btn-action btn-danger" onclick="toggleStatut('${item.code}', '${item.status}')">
+                        <i class="fas fa-ban"></i> Bannir
+                    </button>`;
+                }
                 
                 html += `
                     <tr>
                         <td class="code-cell"><i class="fas fa-key"></i> ${item.code}</td>
-                        <td>${item.date_creation || 'Date inconnue'}</td>
+                        <td class="date-cell ${dateClass}">${item.date_creation || 'Date inconnue'}</td>
+                        <td>
+                            ${formatExpirationDate(item.date_creation)}
+                            ${isExpiringSoon ? '<span class="expiration-info expiring"><i class="fas fa-exclamation-triangle"></i> Bientôt</span>' : ''}
+                            ${isExpired ? '<span class="expiration-info expired"><i class="fas fa-hourglass-end"></i> Expiré</span>' : ''}
+                        </td>
                         <td class="hwid-cell">${item.hwid || '<span style="color:#9ca3af;">Non assigné</span>'}</td>
                         <td>
-                            <span class="status-badge ${isBanni ? 'status-banni' : 'status-actif'}">
-                                <i class="fas ${isBanni ? 'fa-ban' : 'fa-check'}"></i>
-                                ${item.status || 'actif'}
+                            <span class="status-badge ${statusBadgeClass}">
+                                <i class="fas ${statusIcon}"></i>
+                                ${statusText}
                             </span>
                         </td>
                         <td>
-                            <button class="btn-action ${isBanni ? 'btn-success' : 'btn-danger'}" 
-                                    onclick="toggleStatut('${item.code}', '${item.status || 'actif'}')">
-                                <i class="fas ${isBanni ? 'fa-check' : 'fa-ban'}"></i>
-                                ${isBanni ? 'Réactiver' : 'Bannir'}
-                            </button>
+                            ${actionButton}
+                            ${!isExpired ? `<button class="btn-action" onclick="viewCodeDetails('${item.code}')" style="margin-top: 5px;">
+                                <i class="fas fa-info-circle"></i> Détails
+                            </button>` : ''}
                         </td>
                     </tr>
                 `;
@@ -1610,6 +1926,79 @@
             
             tableBody.innerHTML = html;
             updateSortIndicators();
+        }
+
+        // Renouveler un code expiré
+        async function renewCode(code) {
+            if (!confirm(`Renouveler le code ${code} pour 1 an supplémentaire (1000 FCFA) ?`)) {
+                return;
+            }
+            
+            const now = new Date();
+            const newCreationDate = now.toLocaleDateString('fr-FR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric'
+            }) + ' à ' + now.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const url = `${FIREBASE_BASE_URL}/licences/${code}.json`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        date_creation: newCreationDate,
+                        status: 'actif'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                showNotification(`Code ${code} renouvelé pour 1 an supplémentaire`);
+                chargerDonnees();
+                
+            } catch (e) {
+                console.error("Erreur lors du renouvellement:", e);
+                showNotification("Erreur lors du renouvellement : " + e.message, true);
+            }
+        }
+
+        // Voir les détails d'un code
+        function viewCodeDetails(code) {
+            const codeData = allData.find(item => item.code === code);
+            if (!codeData) return;
+            
+            const creationDate = parseFrenchDate(codeData.date_creation);
+            const expirationDate = calculateExpirationDate(codeData.date_creation);
+            const daysLeft = calculateDaysUntilExpiration(codeData.date_creation);
+            
+            let message = `Code: ${code}\n`;
+            message += `Statut: ${codeData.status === 'actif' ? 'Actif' : 'Banni'}\n`;
+            message += `Appareil: ${codeData.hwid || 'Non assigné'}\n`;
+            message += `Créé le: ${codeData.date_creation}\n`;
+            message += `Expire le: ${expirationDate ? expirationDate.toLocaleDateString('fr-FR') : 'Inconnu'}\n`;
+            
+            if (daysLeft !== null) {
+                if (daysLeft < 0) {
+                    message += `Expiré depuis: ${Math.abs(daysLeft)} jour(s)\n`;
+                } else if (daysLeft === 0) {
+                    message += `Expire aujourd'hui!\n`;
+                } else if (daysLeft <= 7) {
+                    message += `Expire dans: ${daysLeft} jour(s)\n`;
+                } else {
+                    message += `Jours restants: ${daysLeft}\n`;
+                }
+            }
+            
+            alert(message);
         }
 
         // Trier le tableau
@@ -1656,15 +2045,19 @@
                 case 'status':
                     currentSort = { column: 'status', direction: 'asc' };
                     break;
+                case 'expiration':
+                    currentSort = { column: 'expiration', direction: 'asc' };
+                    break;
             }
             
             applyFiltersAndSort();
-        })
+        });
 
         // Réinitialiser les filtres
         function resetFilters() {
             document.getElementById('filter-status').value = 'all';
             document.getElementById('filter-hwid').value = 'all';
+            document.getElementById('filter-expiration').value = 'all';
             document.getElementById('search-input').value = '';
             document.getElementById('sort-order').value = 'date-desc';
             currentSort = { column: 'date', direction: 'desc' };
@@ -1693,7 +2086,7 @@
                 return;
             }
             
-            if (!confirm(`Générer ${quantity} code(s) pour ${quantity * 1000} FCFA ?`)) {
+            if (!confirm(`Générer ${quantity} code(s) pour ${quantity * 1000} FCFA ?\n\nChaque code sera valable 1 an à partir de la date de création.`)) {
                 return;
             }
             
@@ -1730,10 +2123,19 @@
                         minute: '2-digit'
                     });
                     
+                    // Calculer la date d'expiration
+                    const expirationDate = new Date(now.getTime() + VALIDITY_DURATION_MS);
+                    const expirationFormatted = expirationDate.toLocaleDateString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    
                     const payload = {
                         status: "actif",
                         hwid: "",
-                        date_creation: formattedDate
+                        date_creation: formattedDate,
+                        date_expiration: expirationFormatted
                     };
                     
                     try {
@@ -1754,7 +2156,7 @@
                             const codeElement = document.createElement('div');
                             codeElement.className = 'generated-code';
                             codeElement.textContent = code;
-                            codeElement.title = `Cliquez pour copier ${code}`;
+                            codeElement.title = `Code: ${code}\nValable jusqu'au: ${expirationFormatted}`;
                             codeElement.onclick = function() {
                                 navigator.clipboard.writeText(code).then(() => {
                                     showNotification(`Code ${code} copié !`);
@@ -1777,7 +2179,7 @@
             }
             
             if (successCount > 0) {
-                showNotification(`${successCount} code(s) généré(s) avec succès pour ${successCount * 1000} FCFA`);
+                showNotification(`${successCount} code(s) généré(s) avec succès pour ${successCount * 1000} FCFA\nValables 1 an à partir d'aujourd'hui`);
                 
                 // Rafraîchir les données
                 chargerDonnees();
@@ -1791,7 +2193,7 @@
             codesContainer.scrollTop = codesContainer.scrollHeight;
         }
 
-        // Générer un seul code (compatibilité avec l'ancien bouton)
+        // Générer un seul code (compatibilité)
         async function genererNouveauCode() {
             document.getElementById('code-quantity').value = 1;
             openBatchGenerator();
@@ -1830,6 +2232,13 @@
             }
         }
 
+        // Vérifier automatiquement les expirations toutes les heures
+        function startExpirationChecker() {
+            setInterval(() => {
+                checkForExpiredCodes();
+            }, 60 * 60 * 1000); // Toutes les heures
+        }
+
         // Vérifier la connexion Internet
         function updateOnlineStatus() {
             if (!navigator.onLine) {
@@ -1840,6 +2249,7 @@
         // Écouteurs d'événements
         document.getElementById('filter-status').addEventListener('change', applyFiltersAndSort);
         document.getElementById('filter-hwid').addEventListener('change', applyFiltersAndSort);
+        document.getElementById('filter-expiration').addEventListener('change', applyFiltersAndSort);
         
         // Recherche avec debounce
         document.getElementById('search-input').addEventListener('input', 
@@ -1852,6 +2262,9 @@
 
         // Rafraîchir automatiquement toutes les 30 secondes
         setInterval(chargerDonnees, 30000);
+        
+        // Démarrer la vérification des expirations
+        startExpirationChecker();
         
         // Initialiser l'état en ligne
         updateOnlineStatus();
