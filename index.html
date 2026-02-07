@@ -482,6 +482,7 @@
             font-weight: 700;
             color: var(--primary);
             font-size: 0.95rem;
+            letter-spacing: 1px;
         }
 
         .hwid-cell {
@@ -932,6 +933,67 @@
             font-size: 0.9rem;
             color: #5d4037;
         }
+
+        /* Batch Generation */
+        .batch-generator {
+            background: var(--light);
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+        }
+
+        .batch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .batch-header h3 {
+            color: var(--dark);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .batch-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .batch-input {
+            width: 80px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .generated-codes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .generated-code {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            padding: 8px;
+            background: #e6f4ea;
+            border-radius: 4px;
+            text-align: center;
+            letter-spacing: 1px;
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -993,10 +1055,30 @@
                         </a>
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="genererNouveauCode()">
-                    <i class="fas fa-plus"></i> Nouvelle Licence (1000 FCFA)
+                <button class="btn btn-primary" onclick="openBatchGenerator()">
+                    <i class="fas fa-plus-circle"></i> Générer Code (1000 FCFA)
                 </button>
             </header>
+
+            <!-- Batch Code Generator -->
+            <div class="batch-generator" id="batch-generator" style="display: none;">
+                <div class="batch-header">
+                    <h3><i class="fas fa-barcode"></i> Générateur de codes</h3>
+                    <div class="batch-controls">
+                        <span>Quantité:</span>
+                        <input type="number" id="code-quantity" class="batch-input" min="1" max="50" value="1">
+                        <button class="btn btn-primary" style="padding: 8px 16px;" onclick="genererCodesBatch()">
+                            <i class="fas fa-bolt"></i> Générer
+                        </button>
+                        <button class="btn btn-secondary" style="padding: 8px 16px;" onclick="fermerBatchGenerator()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="generated-codes" id="generated-codes">
+                    <!-- Les codes générés apparaîtront ici -->
+                </div>
+            </div>
 
             <!-- Stats Cards -->
             <div class="stats-grid">
@@ -1127,87 +1209,8 @@
         <span id="notification-text">Opération réussie</span>
     </div>
 
-    <!-- Modal pour activation Premium -->
-    <div class="modal" id="premiumModal">
-        <div class="modal__content">
-            <div class="modal__header">
-                <h2 class="modal__title">
-                    <i class="fas fa-crown"></i> Activation Premium
-                </h2>
-                <button class="modal__close" onclick="closePremiumModal()">&times;</button>
-            </div>
-            <div class="modal__body">
-                <div class="activation-steps">
-                    <div class="step">
-                        <div class="step__number">1</div>
-                        <div class="step__content">
-                            <h3 class="step__title">Contactez notre support</h3>
-                            <p>Pour obtenir votre code d'activation Premium, contactez notre équipe :</p>
-                            
-                            <div class="contact-options">
-                                <div class="contact-option">
-                                    <div class="contact-option__icon">
-                                        <i class="fab fa-whatsapp" style="color: #25D366; font-size: 1.2rem;"></i>
-                                    </div>
-                                    <div class="contact-option__details">
-                                        <a href="https://wa.me/221772002182" target="_blank" class="contact-option__link">
-                                            +221 77 200 21 82
-                                        </a>
-                                        <div class="contact-option__note">WhatsApp rapide</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="contact-option">
-                                    <div class="contact-option__icon">
-                                        <i class="fas fa-phone" style="color: #3498db; font-size: 1.2rem;"></i>
-                                    </div>
-                                    <div class="contact-option__details">
-                                        <a href="tel:+221756539296" class="contact-option__link">
-                                            +221 75 653 92 96
-                                        </a>
-                                        <div class="contact-option__note">Appel direct</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="business-hours">
-                                <i class="far fa-clock"></i>
-                                <span>Horaires : Lundi - Vendredi, 8h00 - 18h00</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="step">
-                        <div class="step__number">2</div>
-                        <div class="step__content">
-                            <h3 class="step__title">Saisissez votre code</h3>
-                            <div class="form-group">
-                                <label for="activationCode">Code d'activation reçu</label>
-                                <input type="text" id="activationCode" class="form-control" 
-                                       placeholder="Ex : PREM-XXXX-XXXX" maxlength="13">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="offline-notice" id="offlineNotice">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p><strong>Mode hors-ligne :</strong> Copiez les numéros manuellement dans WhatsApp ou votre application téléphone.</p>
-                </div>
-            </div>
-            <div class="modal__footer">
-                <button class="btn btn--secondary" onclick="closePremiumModal()">
-                    Annuler
-                </button>
-                <button class="btn btn--primary" onclick="activatePremium()">
-                    <i class="fas fa-check"></i> Activer Premium
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Configuration Firebase - CORRIGÉE (une seule URL cohérente)
+        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBBImQVH1glIu2eERvpGAPIOWvetUX3r6M",
             authDomain: "agrise-7291a.firebaseapp.com",
@@ -1223,7 +1226,7 @@
         const auth = firebase.auth();
         const database = firebase.database();
 
-        // URL Firebase unique et cohérente
+        // URL Firebase
         const FIREBASE_BASE_URL = "https://agrise-7291a-default-rtdb.firebaseio.com";
         const LICENCES_URL = `${FIREBASE_BASE_URL}/licences.json`;
 
@@ -1232,8 +1235,28 @@
         let filteredData = [];
         let currentSort = { column: 'date', direction: 'desc' };
         let searchTimeout = null;
+        let generatedCodesCache = [];
 
-        // Fonction debounce pour la recherche
+        // Caractères autorisés pour les codes (sans 0 et O)
+        const ALLOWED_CHARS = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789";
+        // Vérification : 34 caractères (26 lettres - O + 9 chiffres - 0)
+
+        // Fonction pour générer un code à 4 caractères
+        function generate4CharCode() {
+            let code = '';
+            for (let i = 0; i < 4; i++) {
+                const randomIndex = Math.floor(Math.random() * ALLOWED_CHARS.length);
+                code += ALLOWED_CHARS[randomIndex];
+            }
+            return code;
+        }
+
+        // Fonction pour vérifier si un code existe déjà
+        function isCodeUnique(code, existingCodes) {
+            return !existingCodes.includes(code);
+        }
+
+        // Fonction debounce
         function debounce(func, wait) {
             return function executedFunction(...args) {
                 const later = () => {
@@ -1636,7 +1659,7 @@
             }
             
             applyFiltersAndSort();
-        });
+        }
 
         // Réinitialiser les filtres
         function resetFilters() {
@@ -1648,56 +1671,134 @@
             applyFiltersAndSort();
         }
 
-        // Générer un nouveau code - CORRIGÉ (URL unique)
-        async function genererNouveauCode() {
-            if (!confirm("Générer une nouvelle licence pour 1000 FCFA ?")) {
+        // Ouvrir le générateur batch
+        function openBatchGenerator() {
+            document.getElementById('batch-generator').style.display = 'block';
+            document.getElementById('code-quantity').focus();
+        }
+
+        // Fermer le générateur batch
+        function fermerBatchGenerator() {
+            document.getElementById('batch-generator').style.display = 'none';
+            document.getElementById('generated-codes').innerHTML = '';
+            generatedCodesCache = [];
+        }
+
+        // Générer un batch de codes
+        async function genererCodesBatch() {
+            const quantity = parseInt(document.getElementById('code-quantity').value) || 1;
+            
+            if (quantity < 1 || quantity > 50) {
+                showNotification("Veuillez entrer une quantité entre 1 et 50", true);
                 return;
             }
             
-            const prefix = "COMPO-";
-            const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const nouveauCode = prefix + randomId;
-            
-            const now = new Date();
-            const formattedDate = now.toLocaleDateString('fr-FR', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric'
-            }) + ' à ' + now.toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            const payload = {
-                status: "actif",
-                hwid: "",
-                date_creation: formattedDate
-            };
-
-            try {
-                const response = await fetch(`${FIREBASE_BASE_URL}/licences/${nouveauCode}.json`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-            
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
-                }
-            
-                showNotification(`Licence ${nouveauCode} générée (1000 FCFA enregistrés)`);
-                chargerDonnees();
-                
-            } catch (e) {
-                console.error("Erreur détaillée:", e);
-                showNotification("Échec de génération : " + e.message, true);
+            if (!confirm(`Générer ${quantity} code(s) pour ${quantity * 1000} FCFA ?`)) {
+                return;
             }
+            
+            // Récupérer les codes existants pour vérifier l'unicité
+            const existingCodes = allData.map(item => item.code.toUpperCase());
+            
+            const codesContainer = document.getElementById('generated-codes');
+            codesContainer.innerHTML = '';
+            generatedCodesCache = [];
+            
+            let successCount = 0;
+            let errorCount = 0;
+            
+            for (let i = 0; i < quantity; i++) {
+                let attempts = 0;
+                let code;
+                let isUnique = false;
+                
+                // Essayer de générer un code unique (maximum 10 tentatives)
+                while (attempts < 10 && !isUnique) {
+                    code = generate4CharCode();
+                    isUnique = isCodeUnique(code, existingCodes) && isCodeUnique(code, generatedCodesCache);
+                    attempts++;
+                }
+                
+                if (isUnique) {
+                    const now = new Date();
+                    const formattedDate = now.toLocaleDateString('fr-FR', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric'
+                    }) + ' à ' + now.toLocaleTimeString('fr-FR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const payload = {
+                        status: "actif",
+                        hwid: "",
+                        date_creation: formattedDate
+                    };
+                    
+                    try {
+                        const response = await fetch(`${FIREBASE_BASE_URL}/licences/${code}.json`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        
+                        if (response.ok) {
+                            generatedCodesCache.push(code);
+                            existingCodes.push(code);
+                            successCount++;
+                            
+                            // Afficher le code généré
+                            const codeElement = document.createElement('div');
+                            codeElement.className = 'generated-code';
+                            codeElement.textContent = code;
+                            codeElement.title = `Cliquez pour copier ${code}`;
+                            codeElement.onclick = function() {
+                                navigator.clipboard.writeText(code).then(() => {
+                                    showNotification(`Code ${code} copié !`);
+                                });
+                            };
+                            codesContainer.appendChild(codeElement);
+                        } else {
+                            errorCount++;
+                        }
+                    } catch (error) {
+                        console.error("Erreur lors de la création:", error);
+                        errorCount++;
+                    }
+                } else {
+                    errorCount++;
+                }
+                
+                // Petit délai pour éviter les requêtes trop rapides
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            if (successCount > 0) {
+                showNotification(`${successCount} code(s) généré(s) avec succès pour ${successCount * 1000} FCFA`);
+                
+                // Rafraîchir les données
+                chargerDonnees();
+            }
+            
+            if (errorCount > 0) {
+                showNotification(`${errorCount} code(s) n'ont pas pu être générés`, true);
+            }
+            
+            // Faire défiler vers le bas pour voir les codes générés
+            codesContainer.scrollTop = codesContainer.scrollHeight;
         }
 
-        // Changer le statut - CORRIGÉ (URL unique)
+        // Générer un seul code (compatibilité avec l'ancien bouton)
+        async function genererNouveauCode() {
+            document.getElementById('code-quantity').value = 1;
+            openBatchGenerator();
+            setTimeout(() => genererCodesBatch(), 100);
+        }
+
+        // Changer le statut
         async function toggleStatut(code, actuel) {
             const nouveauStatut = actuel === 'actif' ? 'banni' : 'actif';
             const action = nouveauStatut === 'banni' ? 'bannir' : 'réactiver';
@@ -1729,47 +1830,6 @@
             }
         }
 
-        // Gestion de la modal Premium
-        function openPremiumModal() {
-            const modal = document.getElementById('premiumModal');
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            
-            // Vérifier si hors-ligne
-            if (!navigator.onLine) {
-                document.getElementById('offlineNotice').style.display = 'flex';
-            }
-            
-            setTimeout(() => {
-                document.getElementById('activationCode').focus();
-            }, 300);
-        }
-
-        function closePremiumModal() {
-            const modal = document.getElementById('premiumModal');
-            modal.classList.remove('active');
-            document.body.style.overflow = 'auto';
-            document.getElementById('offlineNotice').style.display = 'none';
-            document.getElementById('activationCode').value = '';
-        }
-
-        function activatePremium() {
-            const code = document.getElementById('activationCode').value.trim();
-            
-            if (!code) {
-                alert('Veuillez saisir un code d\'activation');
-                return;
-            }
-            
-            // Ici, ajouter la logique de validation du code Premium
-            // Pour l'instant, on simule juste l'activation
-            showNotification('Code Premium activé avec succès !');
-            closePremiumModal();
-            
-            // Après activation, vous pourriez rediriger vers une fonctionnalité premium
-            // ou débloquer des fonctionnalités supplémentaires
-        }
-
         // Vérifier la connexion Internet
         function updateOnlineStatus() {
             if (!navigator.onLine) {
@@ -1781,7 +1841,7 @@
         document.getElementById('filter-status').addEventListener('change', applyFiltersAndSort);
         document.getElementById('filter-hwid').addEventListener('change', applyFiltersAndSort);
         
-        // Recherche avec debounce pour éviter trop d'appels
+        // Recherche avec debounce
         document.getElementById('search-input').addEventListener('input', 
             debounce(applyFiltersAndSort, 300)
         );
@@ -1789,16 +1849,6 @@
         // Gestion des événements en ligne/hors-ligne
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-
-        // Fermer la modal avec Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('premiumModal');
-                if (modal.classList.contains('active')) {
-                    closePremiumModal();
-                }
-            }
-        });
 
         // Rafraîchir automatiquement toutes les 30 secondes
         setInterval(chargerDonnees, 30000);
