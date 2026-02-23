@@ -2,151 +2,98 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Règles de confidentialité - Compo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Politique de confidentialité – Compo</title>
     <style>
         body {
-            font-family: Arial, Helvetica, sans-serif;
-            line-height: 1.7;
-            margin: 40px;
-            color: #222;
-            background-color: #ffffff;
-        }
-        h1, h2 {
-            color: #1a1a1a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
         }
         h1 {
-            text-align: center;
+            color: #00853f;
+            border-bottom: 2px solid #fdef42;
+            padding-bottom: 10px;
         }
-        p {
-            margin-bottom: 15px;
+        h2 {
+            color: #2c3e50;
+            margin-top: 30px;
         }
-        ul {
-            margin-left: 20px;
+        p, li {
+            text-align: justify;
         }
-        footer {
+        .footer {
             margin-top: 40px;
             font-size: 0.9em;
-            color: #555;
+            color: #777;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
             text-align: center;
+        }
+        .date {
+            font-style: italic;
         }
     </style>
 </head>
 <body>
+    <h1>Politique de confidentialité – Compo</h1>
+    <p class="date">Dernière mise à jour : 23 février 2026</p>
 
-<h1>Règles de confidentialité</h1>
+    <p>Compo (« l’Application ») est une application mobile développée par <strong>DiofDev</strong> (ci‑après « nous », « notre »). Nous accordons une grande importance à la protection de vos données personnelles. Cette politique de confidentialité a pour but de vous informer sur la manière dont nous collectons, utilisons et protégeons les informations lorsque vous utilisez notre application.</p>
 
-<p>
-La présente politique de confidentialité décrit comment l’application <strong>Compo</strong>
-collecte, utilise et protège les informations des utilisateurs.
-</p>
+    <h2>1. Données collectées</h2>
+    <p>Nous collectons différents types de données en fonction de votre utilisation de l’application :</p>
+    <ul>
+        <li><strong>Données scolaires (locales)</strong> : les informations que vous saisissez dans l’application (noms des élèves, prénoms, notes, configurations de classe, etc.) sont stockées <strong>uniquement sur votre appareil</strong> (via le stockage local du navigateur / localStorage). Nous n’avons pas accès à ces données et elles ne sont jamais transmises à nos serveurs.</li>
+        <li><strong>Identifiant d’appareil (HWID)</strong> : lors de l’activation de la version Premium, nous utilisons un identifiant unique généré par votre appareil (Android ID) pour lier votre licence à votre terminal. Cet identifiant est transmis à notre serveur Firebase afin de vérifier la validité du code d’activation et d’éviter toute utilisation frauduleuse.</li>
+        <li><strong>Code d’activation</strong> : lorsque vous saisissez un code d’activation, celui-ci est vérifié en temps réel via notre base de données Firebase. Aucune autre information personnelle n’est associée à ce code.</li>
+        <li><strong>Données de connexion</strong> : l’application nécessite une connexion Internet uniquement pour la vérification des codes Premium et pour charger certaines ressources (Firebase). Nous ne collectons pas d’adresses IP ni de journaux de navigation.</li>
+    </ul>
 
-<h2>1. Présentation de l’application</h2>
-<p>
-<strong>Compo</strong> est une application mobile permettant la génération, le téléchargement
-et la consultation de documents PDF (notamment des bulletins) à partir d’une interface Web intégrée.
-</p>
+    <h2>2. Utilisation des données</h2>
+    <p>Les données collectées sont utilisées exclusivement pour :</p>
+    <ul>
+        <li>Activer et gérer votre accès aux fonctionnalités Premium (via Firebase).</li>
+        <li>Améliorer et sécuriser le service (lutte contre les utilisations abusives des codes d’activation).</li>
+        <li>Assurer le bon fonctionnement technique de l’application.</li>
+    </ul>
+    <p>Aucune donnée scolaire ou personnelle (noms, notes) n’est utilisée à des fins commerciales, ni partagée avec des tiers.</p>
 
-<h2>2. Données collectées</h2>
-<p>
-L’application <strong>Compo</strong> collecte uniquement les données strictement nécessaires à son fonctionnement.
-</p>
+    <h2>3. Partage des données</h2>
+    <p>Nous ne partageons aucune donnée avec des tiers, sauf dans les cas suivants :</p>
+    <ul>
+        <li><strong>Firebase (Google)</strong> : la vérification des licences s’effectue via Firebase Realtime Database. Seul l’identifiant matériel (HWID) et le code d’activation sont transmis à Google dans le cadre de ce service. Vous pouvez consulter la politique de confidentialité de Google à l’adresse : <a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a>.</li>
+        <li><strong>Obligation légale</strong> : si la loi nous y contraint, nous pouvons être amenés à divulguer certaines informations aux autorités compétentes.</li>
+    </ul>
 
-<ul>
-    <li>
-        <strong>Identifiant de l’appareil (ANDROID_ID)</strong> : utilisé pour identifier de manière technique
-        l’appareil de l’utilisateur, notamment pour la gestion de l’activation et de la sécurité de l’application.
-    </li>
-    <li>
-        <strong>Données générées par l’utilisateur</strong> : fichiers PDF créés ou téléchargés volontairement
-        par l’utilisateur sur son appareil.
-    </li>
-</ul>
+    <h2>4. Stockage et sécurité</h2>
+    <p>Les données scolaires que vous saisissez restent sur votre appareil. Nous mettons en œuvre des mesures de sécurité raisonnables pour protéger les informations transmises lors de l’activation (chiffrement HTTPS). Cependant, aucune méthode de transmission sur Internet ou de stockage électronique n’est totalement sécurisée. Nous ne pouvons donc pas garantir une sécurité absolue.</p>
 
-<p>
-Aucune donnée personnelle sensible (nom, prénom, adresse, email, numéro de téléphone,
-données bancaires, localisation précise) n’est collectée par l’application.
-</p>
+    <h2>5. Vos droits</h2>
+    <p>Vous avez le droit de :</p>
+    <ul>
+        <li>Accéder aux données que nous détenons à votre sujet (uniquement l’association code + HWID).</li>
+        <li>Demander la suppression de ces données (en nous contactant).</li>
+        <li>Retirer votre consentement à tout moment (par exemple en désinstallant l’application).</li>
+    </ul>
+    <p>Pour exercer ces droits, veuillez nous contacter à l’adresse ou via les numéros indiqués ci‑dessous.</p>
 
-<h2>3. Utilisation des données</h2>
-<p>
-Les données collectées sont utilisées uniquement pour :
-</p>
-<ul>
-    <li>Assurer le bon fonctionnement de l’application</li>
-    <li>Permettre la génération et l’enregistrement de fichiers PDF</li>
-    <li>Améliorer la stabilité et la sécurité de l’application</li>
-</ul>
+    <h2>6. Contact</h2>
+    <p>Si vous avez des questions concernant cette politique de confidentialité, ou pour toute demande relative à vos données, vous pouvez nous joindre :</p>
+    <ul>
+        <li>Par WhatsApp : <a href="https://wa.me/221772002182?text=confidentialité">+221 77 200 21 82</a> ou <a href="https://wa.me/221756539296?text=confidentialité">+221 75 653 92 96</a></li>
+        <li>Par email : (à préciser si vous en avez un)</li>
+    </ul>
 
-<h2>4. Partage des données</h2>
-<p>
-<strong>Compo ne partage aucune donnée personnelle avec des tiers.</strong>
-</p>
-<p>
-Les données ne sont ni vendues, ni louées, ni transmises à des partenaires commerciaux
-ou à des annonceurs.
-</p>
+    <h2>7. Modifications de la politique</h2>
+    <p>Nous pouvons modifier cette politique de confidentialité de temps à autre. La date de la dernière mise à jour figure en tête du document. Nous vous encourageons à consulter régulièrement cette page pour rester informé des éventuels changements.</p>
 
-<h2>5. Stockage des données</h2>
-<p>
-Les fichiers PDF générés par l’application sont stockés <strong>localement sur l’appareil de l’utilisateur</strong>.
-</p>
-<p>
-L’application ne dispose d’aucun serveur distant pour stocker des données personnelles.
-</p>
-
-<h2>6. Sécurité</h2>
-<p>
-Compo met en œuvre des mesures techniques raisonnables pour protéger les données
-contre tout accès non autorisé, perte ou altération.
-</p>
-
-<h2>7. Permissions de l’application</h2>
-<p>
-L’application peut demander les autorisations suivantes :
-</p>
-<ul>
-    <li>
-        <strong>Accès à Internet</strong> : nécessaire au chargement du contenu Web intégré.
-    </li>
-    <li>
-        <strong>Notifications</strong> : utilisées pour informer l’utilisateur après l’enregistrement
-        d’un document PDF.
-    </li>
-</ul>
-
-<p>
-Ces permissions sont utilisées uniquement dans le cadre des fonctionnalités décrites.
-</p>
-
-<h2>8. Protection des enfants</h2>
-<p>
-L’application <strong>Compo</strong> ne s’adresse pas spécifiquement aux enfants de moins de 13 ans
-et ne collecte sciemment aucune donnée personnelle concernant des mineurs.
-</p>
-
-<h2>9. Modifications de la politique de confidentialité</h2>
-<p>
-Cette politique de confidentialité peut être mise à jour à tout moment afin de rester conforme
-aux évolutions légales ou techniques.
-</p>
-<p>
-Toute modification sera publiée sur cette page.
-</p>
-
-<h2>10. Contact</h2>
-<p>
-Pour toute question concernant cette politique de confidentialité ou l’utilisation de l’application,
-vous pouvez contacter le développeur à l’adresse suivante :
-</p>
-
-<p>
-<strong>Email :</strong> diofdev@gmail.com
-</p>
-
-<footer>
-    <p>© 2026 Compo. Tous droits réservés.</p>
-</footer>
-
+    <div class="footer">
+        <p>© 2026 DiofDev – Tous droits réservés.</p>
+    </div>
 </body>
 </html>
